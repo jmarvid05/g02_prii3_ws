@@ -1,0 +1,25 @@
+[0.373s] Invoking command in '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/src/g02_prii3_move_turtlebot': PYTHONPATH=/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/g02_prii3_move_turtlebot build --build-base /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build install --record /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/install.log --install-scripts $base/lib/g02_prii3_move_turtlebot --single-version-externally-managed install_data
+[0.504s] running egg_info
+[0.505s] writing ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/PKG-INFO
+[0.505s] writing dependency_links to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/dependency_links.txt
+[0.505s] writing entry points to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/entry_points.txt
+[0.505s] writing requirements to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/requires.txt
+[0.505s] writing top-level names to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/top_level.txt
+[0.507s] reading manifest file '../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/SOURCES.txt'
+[0.507s] writing manifest file '../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/SOURCES.txt'
+[0.508s] running build
+[0.508s] running build_py
+[0.508s] running install
+[0.508s] running install_lib
+[0.509s] running install_data
+[0.509s] copying launch/draw_number.launch.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/g02_prii3_move_turtlebot/launch
+[0.509s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/g02_prii3_move_turtlebot/config
+[0.509s] copying config/draw_number.rviz -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/g02_prii3_move_turtlebot/config
+[0.509s] running install_egg_info
+[0.510s] removing '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot-0.0.0-py3.10.egg-info' (and everything under it)
+[0.510s] Copying ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info to /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot-0.0.0-py3.10.egg-info
+[0.510s] running install_scripts
+[0.523s] Installing draw_number script to /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/g02_prii3_move_turtlebot
+[0.523s] Installing trail_node script to /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/g02_prii3_move_turtlebot
+[0.523s] writing list of installed files to '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/install.log'
+[0.542s] Invoked command in '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/src/g02_prii3_move_turtlebot' returned '0': PYTHONPATH=/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/g02_prii3_move_turtlebot build --build-base /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build install --record /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/install.log --install-scripts $base/lib/g02_prii3_move_turtlebot --single-version-externally-managed install_data

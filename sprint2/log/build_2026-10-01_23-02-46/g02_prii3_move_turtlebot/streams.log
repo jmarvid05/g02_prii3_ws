@@ -1,0 +1,41 @@
+[0.358s] Invoking command in '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/src/g02_prii3_move_turtlebot': PYTHONPATH=/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/g02_prii3_move_turtlebot build --build-base /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build install --record /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/install.log --install-scripts $base/lib/g02_prii3_move_turtlebot --single-version-externally-managed install_data
+[0.488s] running egg_info
+[0.489s] creating ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info
+[0.489s] writing ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/PKG-INFO
+[0.489s] writing dependency_links to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/dependency_links.txt
+[0.489s] writing entry points to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/entry_points.txt
+[0.489s] writing requirements to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/requires.txt
+[0.489s] writing top-level names to ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/top_level.txt
+[0.489s] writing manifest file '../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/SOURCES.txt'
+[0.490s] reading manifest file '../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/SOURCES.txt'
+[0.491s] writing manifest file '../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info/SOURCES.txt'
+[0.491s] running build
+[0.491s] running build_py
+[0.491s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build
+[0.491s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib
+[0.491s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot
+[0.491s] copying g02_prii3_move_turtlebot/trail_node.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot
+[0.491s] copying g02_prii3_move_turtlebot/draw_number.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot
+[0.491s] copying g02_prii3_move_turtlebot/__init__.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot
+[0.491s] running install
+[0.491s] running install_lib
+[0.492s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot
+[0.492s] copying /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot/trail_node.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot
+[0.492s] copying /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot/draw_number.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot
+[0.492s] copying /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build/lib/g02_prii3_move_turtlebot/__init__.py -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot
+[0.492s] byte-compiling /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot/trail_node.py to trail_node.cpython-310.pyc
+[0.492s] byte-compiling /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot/draw_number.py to draw_number.cpython-310.pyc
+[0.493s] byte-compiling /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot/__init__.py to __init__.cpython-310.pyc
+[0.493s] running install_data
+[0.493s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/ament_index
+[0.493s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/ament_index/resource_index
+[0.493s] creating /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/ament_index/resource_index/packages
+[0.493s] copying resource/g02_prii3_move_turtlebot -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/ament_index/resource_index/packages
+[0.493s] copying package.xml -> /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/share/g02_prii3_move_turtlebot
+[0.493s] running install_egg_info
+[0.494s] Copying ../../build/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot.egg-info to /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages/g02_prii3_move_turtlebot-0.0.0-py3.10.egg-info
+[0.494s] running install_scripts
+[0.507s] Installing draw_number script to /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/g02_prii3_move_turtlebot
+[0.507s] Installing trail_node script to /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/g02_prii3_move_turtlebot
+[0.507s] writing list of installed files to '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/install.log'
+[0.528s] Invoked command in '/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/src/g02_prii3_move_turtlebot' returned '0': PYTHONPATH=/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/install/g02_prii3_move_turtlebot/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/g02_prii3_move_turtlebot build --build-base /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/build install --record /home/javiermv/UNI/PROYECTOS3/g02_prii3_ws/sprint2/build/g02_prii3_move_turtlebot/install.log --install-scripts $base/lib/g02_prii3_move_turtlebot --single-version-externally-managed install_data

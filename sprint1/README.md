@@ -1,4 +1,4 @@
-# g02_prii3_ws
+# g02_prii3_ws/sprint1
 
 Workspace de ROS 2 del grupo 02 para la asignatura Robots Inteligentes.
 
@@ -26,7 +26,7 @@ También dispone de servicios ROS 2 para:
 
 Situarse en la raíz del workspace:
 
-    cd g02_prii3_ws
+    cd ~/UNI/PROYECTOS3/g02_prii3_ws/sprint1 #o tu carpeta correspondiente
 
 Cargar ROS 2 Humble:
 
@@ -52,7 +52,7 @@ La tortuga dibujará automáticamente el número 2.
 
 En otra terminal:
 
-    cd g02_prii3_ws
+    cd g02_prii3_ws/sprint1
     source /opt/ros/humble/setup.bash
     source install/setup.bash
 
