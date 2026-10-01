@@ -26,6 +26,13 @@ También incluye:
 - Generación de un rastro de la trayectoria en `/robot_path`
 - Visualización del recorrido en RViz
 
+## Comandos juntos (antes leer que hacen)
+    cd ~/UNI/PROYECTOS3/g02_prii3_ws/sprint2 #o tu carpeta correspondiente
+    source /opt/ros/humble/setup.bash
+    colcon build --packages-select g02_prii3_move_turtlebot
+    source install/setup.bash
+    ros2 launch g02_prii3_move_turtlebot draw_number.launch.py
+
 ## Compilación
 
 Situarse en la raíz del workspace del sprint 2:
