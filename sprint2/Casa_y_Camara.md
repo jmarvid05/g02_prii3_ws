@@ -2,6 +2,7 @@ TURTLEBOT3 - CASA Y CAMARA
 
 1. Abrir la casa:
 
+cd ~/UNI/PROYECTOS3/g02_prii3_ws/sprint2
 source /opt/ros/humble/setup.bash
 export TURTLEBOT3_MODEL=waffle_pi
 ros2 launch turtlebot3_gazebo turtlebot3_house.launch.py
