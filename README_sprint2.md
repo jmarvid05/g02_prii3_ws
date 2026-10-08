@@ -37,7 +37,7 @@ También incluye:
 
 Situarse en la raíz del workspace del sprint 2:
 
-    cd ~/UNI/PROYECTOS3/g02_prii3_ws/sprint2 #o tu carpeta correspondiente
+    cd ~/UNI/PROYECTOS3/g02_prii3_ws #o tu carpeta correspondiente
 
 Cargar ROS 2 Humble:
 
