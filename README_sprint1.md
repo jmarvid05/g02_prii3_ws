@@ -26,7 +26,7 @@ También dispone de servicios ROS 2 para:
 
 Situarse en la raíz del workspace:
 
-    cd ~/UNI/PROYECTOS3/g02_prii3_ws/sprint1 #o tu carpeta correspondiente
+    cd ~/UNI/PROYECTOS3/g02_prii3_ws #o tu carpeta correspondiente
 
 Cargar ROS 2 Humble:
 
