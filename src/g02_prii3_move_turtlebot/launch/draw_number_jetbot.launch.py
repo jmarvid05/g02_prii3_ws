@@ -4,13 +4,13 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    draw_number_node = Node(
+    draw_number_jetbot_node = Node(
         package='g02_prii3_move_turtlebot',
-        executable='draw_number',
+        executable='draw_number_jetbot',
         name='draw_number',
         output='screen'
     )
 
     return LaunchDescription([
-        draw_number_node
+        draw_number_jetbot_node
     ])
