@@ -8,8 +8,13 @@ import os
 
 def generate_launch_description():
 
-    turtlebot3_gazebo_dir = get_package_share_directory('turtlebot3_gazebo')
-    package_share = get_package_share_directory('g02_prii3_move_turtlebot')
+    turtlebot3_gazebo_dir = get_package_share_directory(
+        'turtlebot3_gazebo'
+    )
+
+    package_share = get_package_share_directory(
+        'g02_prii3_move_turtlebot'
+    )
 
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -63,7 +68,6 @@ def generate_launch_description():
             name='TURTLEBOT3_MODEL',
             value='burger'
         ),
-
         gazebo_launch,
         delayed_nodes
     ])
