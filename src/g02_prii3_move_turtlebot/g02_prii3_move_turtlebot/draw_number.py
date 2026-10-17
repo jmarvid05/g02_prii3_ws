@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_srvs.srv import Trigger
 
 
 class DrawNumber(Node):
@@ -21,9 +22,71 @@ class DrawNumber(Node):
 
         self.estado = 0
         self.contador = 0
+        self.pausado = False
+
+        self.create_service(
+            Trigger,
+            'detener_dibujo',
+            self.detener_dibujo
+        )
+
+        self.create_service(
+            Trigger,
+            'reanudar_dibujo',
+            self.reanudar_dibujo
+        )
+
+        self.create_service(
+            Trigger,
+            'reiniciar_dibujo',
+            self.reiniciar_dibujo
+        )
+
+    def detener_dibujo(self, request, response):
+        self.pausado = True
+
+        msg = Twist()
+        self.publisher_.publish(msg)
+
+        self.get_logger().info('Dibujo detenido')
+
+        response.success = True
+        response.message = 'Dibujo detenido'
+
+        return response
+
+    def reanudar_dibujo(self, request, response):
+        self.pausado = False
+
+        self.get_logger().info('Dibujo reanudado')
+
+        response.success = True
+        response.message = 'Dibujo reanudado'
+
+        return response
+
+    def reiniciar_dibujo(self, request, response):
+        self.estado = 0
+        self.contador = 0
+        self.pausado = False
+
+        msg = Twist()
+        self.publisher_.publish(msg)
+
+        self.get_logger().info('Dibujo reiniciado')
+
+        response.success = True
+        response.message = 'Dibujo reiniciado'
+
+        return response
 
     def move_robot(self):
         msg = Twist()
+
+        # Si el dibujo esta detenido, el robot permanece parado
+        if self.pausado:
+            self.publisher_.publish(msg)
+            return
 
         # ESTADO 0: curva
         if self.estado == 0:
