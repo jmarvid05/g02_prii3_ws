@@ -4,7 +4,7 @@ Workspace de ROS 2 del grupo 02 para la asignatura Robots Inteligentes.
 
 ## Requisitos
 
-Para la simulación:
+### Simulación
 
 - Ubuntu 22.04 LTS
 - ROS 2 Humble
@@ -12,65 +12,51 @@ Para la simulación:
 - TurtleBot3
 - Gazebo
 - RViz2
+- OpenCV
+- cv_bridge
 
-Para el JetBot real se utiliza ROS 2 Foxy. Las instrucciones específicas se encuentran en `README_JETBOT.md`.
+### JetBot real
+
+El JetBot utiliza ROS 2 Foxy. Las instrucciones específicas para el robot real se encuentran en `README_JETBOT.md`.
 
 ## Paquetes
 
 El Sprint 2 utiliza dos paquetes:
 
-- `g02_prii3_move_turtlebot`: contiene los nodos utilizados para la simulación con TurtleBot3 en Gazebo.
-- `g02_prii3_move_jetbot`: contiene los nodos destinados al robot real JetBot.
+- `g02_prii3_move_turtlebot`: nodos utilizados para la simulación con TurtleBot3 en Gazebo.
+- `g02_prii3_move_jetbot`: nodos destinados al robot real JetBot, incluyendo movimiento y visión.
 
-La parte de simulación incluye:
+## PBI 2.1 - Movimiento autónomo
 
-- Publicación de velocidad en `/cmd_vel`
-- Lectura de odometría desde `/odom`
-- Generación de un rastro de la trayectoria en `/robot_path`
-- Visualización del recorrido en RViz
-- Servicios para detener, reanudar y reiniciar el dibujo
+### Simulación
 
-## Comandos juntos para simulación
+El nodo:
+
+```text
+draw_number
+```
+
+publica mensajes de tipo:
+
+```text
+geometry_msgs/msg/Twist
+```
+
+en:
+
+```text
+/cmd_vel
+```
+
+para realizar la trayectoria correspondiente al número 2.
+
+La simulación se ejecuta con:
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
 source /opt/ros/humble/setup.bash
 colcon build --packages-select g02_prii3_move_turtlebot
 source install/setup.bash
-ros2 launch g02_prii3_move_turtlebot draw_number.launch.py
-```
-
-## Compilación de la simulación
-
-Situarse en la raíz del workspace:
-
-```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
-```
-
-Cargar ROS 2 Humble:
-
-```bash
-source /opt/ros/humble/setup.bash
-```
-
-Compilar:
-
-```bash
-colcon build --packages-select g02_prii3_move_turtlebot
-```
-
-Cargar el workspace:
-
-```bash
-source install/setup.bash
-```
-
-## Ejecución de la simulación
-
-Ejecutar la simulación desde un único fichero launch:
-
-```bash
 ros2 launch g02_prii3_move_turtlebot draw_number.launch.py
 ```
 
@@ -83,131 +69,291 @@ El fichero launch inicia automáticamente:
 - Nodo `trail_node`
 - RViz2
 
-Se espera unos segundos antes de iniciar los nodos para dar tiempo a Gazebo a cargar correctamente.
-
-## Nodo draw_number en simulación
-
-El nodo `draw_number` publica mensajes de tipo:
-
-```text
-geometry_msgs/msg/Twist
-```
-
-en el topic:
-
-```text
-/cmd_vel
-```
-
-Los principales valores utilizados son:
-
-```text
-linear.x
-angular.z
-```
-
-La trayectoria se divide en diferentes estados para formar el número 2.
-
 ### Servicios de control del dibujo
 
-El nodo `draw_number` dispone de tres servicios ROS que permiten controlar la ejecución de la trayectoria:
+El nodo `draw_number` dispone de tres servicios:
 
-- `/detener_dibujo`: detiene temporalmente el movimiento del robot.
-- `/reanudar_dibujo`: continúa el dibujo desde el punto en el que se había detenido.
-- `/reiniciar_dibujo`: reinicia la trayectoria y comienza de nuevo desde el primer estado.
+- `/detener_dibujo`: detiene temporalmente el movimiento.
+- `/reanudar_dibujo`: continúa desde el punto en el que se detuvo.
+- `/reiniciar_dibujo`: reinicia la trayectoria desde el primer estado.
 
-Los tres servicios utilizan el tipo:
+Los tres utilizan:
 
 ```text
 std_srvs/srv/Trigger
 ```
 
-Para detener el dibujo:
+Detener:
 
 ```bash
 ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-Para reanudar el dibujo:
+Reanudar:
 
 ```bash
 ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-Para reiniciar el dibujo:
+Reiniciar:
 
 ```bash
 ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-Al ejecutar cada servicio, el nodo muestra por terminal si el dibujo ha sido detenido, reanudado o reiniciado.
+El nodo muestra por terminal cuándo el dibujo ha sido detenido, reanudado o reiniciado.
 
-## Nodo trail_node
+### Rastro en RViz
 
-El nodo `trail_node` recibe la odometría del robot desde:
+El nodo:
+
+```text
+trail_node
+```
+
+recibe la odometría desde:
 
 ```text
 /odom
 ```
 
-y genera un mensaje de tipo:
+y publica un:
 
 ```text
 nav_msgs/msg/Path
 ```
 
-que se publica en:
+en:
 
 ```text
 /robot_path
 ```
 
-Este topic permite visualizar en RViz el recorrido realizado por el TurtleBot3.
-
-## RViz
-
-RViz se inicia automáticamente desde el fichero launch utilizando una configuración guardada.
-
-La configuración utiliza:
+RViz utiliza:
 
 ```text
 Fixed Frame: odom
-```
-
-y muestra:
-
-```text
 Path -> /robot_path
 ```
 
-De esta forma se puede visualizar el rastro generado por el movimiento del robot.
+para visualizar el recorrido del TurtleBot3.
 
-## Ejecución manual de los nodos de simulación
+### JetBot real
 
-Si se desea ejecutar únicamente el nodo de movimiento:
+La versión para robot real se encuentra en:
 
-```bash
-ros2 run g02_prii3_move_turtlebot draw_number
+```text
+src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/draw_number_jetbot.py
 ```
 
-Para ejecutar únicamente el nodo del rastro:
+También dispone de los servicios:
 
-```bash
-ros2 run g02_prii3_move_turtlebot trail_node
+```text
+/detener_dibujo
+/reanudar_dibujo
+/reiniciar_dibujo
 ```
 
-## JetBot real
+Las instrucciones completas de ejecución están en `README_JETBOT.md`.
 
-El código destinado al robot real se encuentra en el paquete:
+## PBI 2.2 - Evitación de obstáculos
+
+Pendiente de completar.
+
+Se implementarán para simulación y robot real:
+
+```text
+collision_avoidance
+obstacle_avoidance
+```
+
+`collision_avoidance` detendrá el robot al detectar un obstáculo delante y reanudará la marcha cuando desaparezca.
+
+`obstacle_avoidance` permitirá esquivar el obstáculo sin detener la marcha.
+
+## PBI 2.3 - Calibración de cámara y ArUco
+
+La parte de visión está incluida en el paquete:
 
 ```text
 g02_prii3_move_jetbot
 ```
 
-Las instrucciones de compilación, ejecución y comprobación del JetBot real se encuentran en:
+### Calibración de cámara
+
+Se utilizaron imágenes de un tablero de ajedrez tomadas desde diferentes posiciones y ángulos.
+
+El patrón utilizado contiene:
 
 ```text
-README_JETBOT.md
+13 x 9 esquinas interiores
+```
+
+El proceso realizado es:
+
+1. Detección del tablero con `cv2.findChessboardCorners()`.
+2. Refinado subpíxel con `cv2.cornerSubPix()`.
+3. Cálculo de los parámetros con `cv2.calibrateCamera()`.
+4. Análisis del error de reproyección.
+5. Filtrado de imágenes con mayor error.
+6. Generación del fichero de calibración.
+
+El fichero final se encuentra en:
+
+```text
+src/g02_prii3_move_jetbot/config/CameraModel.yml
+```
+
+Contiene:
+
+```text
+cameraMatrix
+distCoeffs
+```
+
+La calibración filtrada utilizada obtuvo un error aproximado de:
+
+```text
+1.19
+```
+
+### Rectificación de imagen
+
+El nodo:
+
+```text
+camera_rectification
+```
+
+carga `CameraModel.yml`, recibe imágenes desde el topic de la cámara y muestra simultáneamente:
+
+```text
+ORIGINAL
+RECTIFICADA
+```
+
+El nodo utiliza `cv2.undistort()` para corregir la distorsión de la imagen.
+
+### Detección ArUco
+
+El nodo:
+
+```text
+aruco_detection
+```
+
+utiliza el diccionario:
+
+```text
+DICT_4X4_50
+```
+
+y muestra:
+
+- El ID de cada marcador detectado.
+- El contorno del marcador.
+- Los ejes de orientación 3D.
+
+En las imágenes de prueba se detectaron correctamente los IDs:
+
+```text
+21
+36
+```
+
+El tamaño configurado actualmente para el marcador es:
+
+```text
+0.05 m
+```
+
+Este valor debe ajustarse al tamaño físico real del ArUco si se necesita una escala de traslación precisa.
+
+### Launch de visión
+
+Los dos nodos de visión se pueden ejecutar conjuntamente con:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py
+```
+
+Por defecto se utiliza:
+
+```text
+/camera/image_raw
+```
+
+El topic puede cambiarse al lanzar:
+
+```bash
+ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py image_topic:=/topic/de/la/camara
+```
+
+### Prueba sin el JetBot
+
+Para comprobar el sistema sin disponer físicamente del robot, se puede publicar una imagen guardada en `/camera/image_raw`:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+python3 calibracion/publicar_imagen_ros.py
+```
+
+En otra terminal:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py
+```
+
+Se abren dos ventanas:
+
+```text
+Original vs Rectificada
+Deteccion ArUco
+```
+
+## Compilar los paquetes del Sprint 2
+
+Desde la raíz del workspace:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+source /opt/ros/humble/setup.bash
+colcon build --packages-select g02_prii3_move_turtlebot g02_prii3_move_jetbot
+source install/setup.bash
+```
+
+## Ejecución manual de nodos
+
+Movimiento en simulación:
+
+```bash
+ros2 run g02_prii3_move_turtlebot draw_number
+```
+
+Rastro:
+
+```bash
+ros2 run g02_prii3_move_turtlebot trail_node
+```
+
+Rectificación:
+
+```bash
+ros2 run g02_prii3_move_jetbot camera_rectification
+```
+
+ArUco:
+
+```bash
+ros2 run g02_prii3_move_jetbot aruco_detection
 ```
 
 ## Grupo
