@@ -41,6 +41,8 @@ setup(
             'draw_number_jetbot = g02_prii3_move_jetbot.draw_number_jetbot:main',
             'camera_rectification = g02_prii3_move_jetbot.camera_rectification:main',
             'aruco_detection = g02_prii3_move_jetbot.aruco_detection:main',
+            'collision_avoidance = g02_prii3_move_jetbot.collision_avoidance:main',
+            'obstacle_avoidance = g02_prii3_move_jetbot.obstacle_avoidance:main',
         ],
     },
 )

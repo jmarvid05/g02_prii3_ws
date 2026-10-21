@@ -39,6 +39,8 @@ setup(
         'console_scripts': [
             'draw_number = g02_prii3_move_turtlebot.draw_number:main',
             'trail_node = g02_prii3_move_turtlebot.trail_node:main',
+            'collision_avoidance = g02_prii3_move_turtlebot.collision_avoidance:main',
+            'obstacle_avoidance = g02_prii3_move_turtlebot.obstacle_avoidance:main',
         ],
     },
 )
