@@ -135,7 +135,95 @@ Reiniciar:
 ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-## 7. Calibración de cámara
+## 7. Evitación de obstáculos
+
+El paquete `g02_prii3_move_jetbot` incluye dos nodos para el PBI 2.2:
+
+```text
+collision_avoidance
+obstacle_avoidance
+```
+
+Ambos utilizan el LiDAR mediante mensajes `sensor_msgs/msg/LaserScan` y publican el movimiento en `/cmd_vel`.
+
+### Collision avoidance
+
+El nodo `collision_avoidance` continúa dibujando el número 2 mientras el camino está libre.
+
+Cuando detecta un obstáculo delante a menos de la distancia de seguridad, el JetBot se detiene completamente y congela el contador de la trayectoria.
+
+Cuando el obstáculo desaparece, el robot continúa el dibujo desde el punto lógico en el que se encontraba.
+
+Ejecución:
+
+```bash
+ros2 run g02_prii3_move_jetbot collision_avoidance
+```
+
+Por defecto utiliza:
+
+```text
+scan_topic = /scan
+```
+
+Si el LiDAR publica en otro topic:
+
+```bash
+ros2 run g02_prii3_move_jetbot collision_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+```
+
+La distancia de seguridad inicial es:
+
+```text
+0.45 m
+```
+
+### Obstacle avoidance
+
+El nodo `obstacle_avoidance` esquiva el obstáculo sin quedarse parado.
+
+El LiDAR analiza tres sectores:
+
+```text
+Frente:     -20° a +20°
+Izquierda:  +20° a +90°
+Derecha:    -90° a -20°
+```
+
+Al detectar un obstáculo delante, compara el espacio disponible a izquierda y derecha y elige el lado más libre.
+
+La maniobra consta de:
+
+1. `GIRO_SALIDA`: avanza mientras gira para separarse del obstáculo.
+2. `AVANCE`: continúa avanzando para superarlo.
+3. `GIRO_RETORNO`: gira en sentido contrario mientras avanza para recuperar aproximadamente la orientación anterior.
+
+Ejecución:
+
+```bash
+ros2 run g02_prii3_move_jetbot obstacle_avoidance
+```
+
+Para utilizar otro topic de LiDAR:
+
+```bash
+ros2 run g02_prii3_move_jetbot obstacle_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+```
+
+Valores iniciales de la maniobra:
+
+```text
+Distancia de detección: 0.50 m
+Velocidad lineal durante la esquiva: 0.10 m/s
+Velocidad angular durante los giros: +/-0.8 rad/s
+GIRO_SALIDA: 15 ciclos
+AVANCE: 25 ciclos
+GIRO_RETORNO: 15 ciclos
+```
+
+La lógica de ambos nodos está implementada y compilada. Antes de dar por definitivos los parámetros del robot real, deben comprobarse físicamente en el JetBot y ajustarse si fuera necesario.
+
+## 8. Calibración de cámara
 
 El fichero de calibración utilizado se encuentra en:
 
@@ -152,7 +240,7 @@ distCoeffs
 
 Los parámetros fueron obtenidos a partir del conjunto de imágenes de calibración utilizado en clase.
 
-## 8. Rectificación de imagen
+## 9. Rectificación de imagen
 
 El nodo:
 
@@ -191,7 +279,7 @@ Para utilizar otro topic:
 ros2 run g02_prii3_move_jetbot camera_rectification --ros-args -p image_topic:=/topic/de/la/camara
 ```
 
-## 9. Detección de ArUco
+## 10. Detección de ArUco
 
 El nodo:
 
@@ -225,7 +313,7 @@ El tamaño del marcador está configurado actualmente como:
 
 Este valor debe ajustarse al tamaño físico real del ArUco si se necesita una escala de traslación precisa.
 
-## 10. Launch de visión
+## 11. Launch de visión
 
 Para ejecutar rectificación y detección ArUco simultáneamente:
 
@@ -249,7 +337,7 @@ Para conocer los topics disponibles:
 ros2 topic list
 ```
 
-## 11. Comprobaciones
+## 12. Comprobaciones
 
 Nodos activos:
 
@@ -283,12 +371,12 @@ Visualizar los comandos enviados:
 ros2 topic echo /cmd_vel
 ```
 
-## 12. Editar y recompilar
+## 13. Editar y recompilar
 
 Editar el movimiento:
 
 ```bash
-vim ~/g02_prii3_ws/src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/draw_number_jetbot.py
+code ~/g02_prii3_ws/src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/draw_number_jetbot.py
 ```
 
 Después de realizar cambios:
@@ -301,7 +389,7 @@ colcon build --packages-select g02_prii3_move_jetbot
 source install/setup.bash
 ```
 
-## 13. Parar el robot
+## 14. Parar el robot
 
 Detener un nodo:
 

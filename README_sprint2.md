@@ -158,19 +158,164 @@ Las instrucciones completas de ejecución están en `README_JETBOT.md`.
 
 ## PBI 2.2 - Evitación de obstáculos
 
-Pendiente de completar.
+Se han implementado dos comportamientos de evitación de obstáculos tanto para simulación como para el JetBot real:
 
-Se implementarán para simulación y robot real:
+- `collision_avoidance`: el robot se detiene cuando detecta un obstáculo delante y reanuda el dibujo cuando el obstáculo desaparece.
+- `obstacle_avoidance`: el robot esquiva el obstáculo sin quedarse detenido y después continúa el dibujo.
+
+### Collision avoidance
+
+El nodo utiliza los datos del LiDAR publicados como `sensor_msgs/msg/LaserScan`.
+
+Mientras no haya ningún obstáculo delante, el robot continúa ejecutando la trayectoria del número 2.
+
+Si detecta un obstáculo dentro de la distancia de seguridad, publica velocidad cero en `/cmd_vel` y congela el contador de la trayectoria. De esta forma, al desaparecer el obstáculo, el robot continúa desde el mismo punto lógico del dibujo.
+
+#### Simulación
+
+El nodo de simulación se encuentra en:
 
 ```text
-collision_avoidance
-obstacle_avoidance
+src/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot/collision_avoidance.py
 ```
 
-`collision_avoidance` detendrá el robot al detectar un obstáculo delante y reanudará la marcha cuando desaparezca.
+La zona frontal analizada es aproximadamente de `-15°` a `+15°` y la distancia de seguridad utilizada es:
 
-`obstacle_avoidance` permitirá esquivar el obstáculo sin detener la marcha.
+```text
+0.45 m
+```
 
+Para probarlo, primero se inicia Gazebo:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+export TURTLEBOT3_MODEL=burger
+ros2 launch turtlebot3_gazebo empty_world.launch.py
+```
+
+En otra terminal:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 run g02_prii3_move_turtlebot collision_avoidance
+```
+
+Comportamiento comprobado en simulación:
+
+```text
+Dibuja el 2
+-> detecta un obstáculo delante
+-> se detiene
+-> el obstáculo desaparece
+-> reanuda el dibujo desde donde se había detenido
+```
+
+#### JetBot real
+
+La versión para el robot real se encuentra en:
+
+```text
+src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/collision_avoidance.py
+```
+
+Ejecución:
+
+```bash
+ros2 run g02_prii3_move_jetbot collision_avoidance
+```
+
+El topic del LiDAR es configurable mediante el parámetro `scan_topic`.
+
+Por defecto:
+
+```text
+/scan
+```
+
+Si el LiDAR del JetBot utiliza otro topic:
+
+```bash
+ros2 run g02_prii3_move_jetbot collision_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+```
+
+La lógica está implementada y compilada, pero debe validarse físicamente en el JetBot.
+
+### Obstacle avoidance
+
+El nodo `obstacle_avoidance` evita el obstáculo sin quedarse parado.
+
+El LiDAR divide el entorno en tres sectores:
+
+```text
+Frente:     -20° a +20°
+Izquierda:  +20° a +90°
+Derecha:    -90° a -20°
+```
+
+Cuando se detecta un obstáculo delante, el robot compara las distancias izquierda y derecha y elige el lado con más espacio libre.
+
+La maniobra está dividida en tres fases:
+
+1. `GIRO_SALIDA`: avanza mientras gira hacia el lado elegido.
+2. `AVANCE`: continúa avanzando para superar el obstáculo.
+3. `GIRO_RETORNO`: avanza mientras gira hacia el lado contrario para recuperar aproximadamente la orientación anterior.
+
+Mientras se realiza la esquiva, el contador del dibujo del número 2 queda congelado. Al terminar la maniobra, el dibujo continúa desde el estado en el que se encontraba.
+
+#### Simulación
+
+El nodo se encuentra en:
+
+```text
+src/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot/obstacle_avoidance.py
+```
+
+Ejecución:
+
+```bash
+ros2 run g02_prii3_move_turtlebot obstacle_avoidance
+```
+
+Valores comprobados en simulación:
+
+```text
+Distancia de detección: 0.50 m
+Velocidad lineal durante la esquiva: 0.10 m/s
+Velocidad angular durante los giros: +/-0.8 rad/s
+GIRO_SALIDA: 15 ciclos
+AVANCE: 25 ciclos
+GIRO_RETORNO: 15 ciclos
+```
+
+El temporizador del nodo se ejecuta cada `0.1 s`, por lo que los 15 ciclos de giro corresponden aproximadamente a `1.5 s` y los 25 ciclos de avance a `2.5 s`.
+
+El comportamiento se ha probado en Gazebo y el TurtleBot rodea el obstáculo sin quedarse parado, recupera aproximadamente su orientación y continúa la trayectoria.
+
+#### JetBot real
+
+La versión para el JetBot se encuentra en:
+
+```text
+src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/obstacle_avoidance.py
+```
+
+Ejecución:
+
+```bash
+ros2 run g02_prii3_move_jetbot obstacle_avoidance
+```
+
+También permite modificar el topic del LiDAR:
+
+```bash
+ros2 run g02_prii3_move_jetbot obstacle_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+```
+
+Los valores iniciales de la maniobra son los mismos que los comprobados en simulación. La lógica está implementada y compilada, pero los tiempos, velocidades y distancias deben comprobarse y ajustarse físicamente en el JetBot si fuera necesario.
 ## PBI 2.3 - Calibración de cámara y ArUco
 
 La parte de visión está incluida en el paquete:
@@ -342,6 +487,30 @@ Rastro:
 
 ```bash
 ros2 run g02_prii3_move_turtlebot trail_node
+```
+
+Collision avoidance en simulación:
+
+```bash
+ros2 run g02_prii3_move_turtlebot collision_avoidance
+```
+
+Obstacle avoidance en simulación:
+
+```bash
+ros2 run g02_prii3_move_turtlebot obstacle_avoidance
+```
+
+Collision avoidance en JetBot:
+
+```bash
+ros2 run g02_prii3_move_jetbot collision_avoidance
+```
+
+Obstacle avoidance en JetBot:
+
+```bash
+ros2 run g02_prii3_move_jetbot obstacle_avoidance
 ```
 
 Rectificación:
