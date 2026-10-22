@@ -78,8 +78,8 @@ class CollisionAvoidance(Node):
 
             # Normalizamos el angulo entre -pi y +pi
             angulo_normalizado = math.atan2(
-                math.sin(angulo),
-                math.cos(angulo)
+                math.sin(angulo - math.pi),
+                math.cos(angulo - math.pi)
             )
 
             # Solo analizamos el sector situado delante
