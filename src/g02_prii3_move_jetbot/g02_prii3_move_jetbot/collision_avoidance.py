@@ -48,7 +48,7 @@ class CollisionAvoidance(Node):
         self.contador = 0
 
         # Distancia a la que detenemos el robot
-        self.distancia_seguridad = 0.35
+        self.distancia_seguridad = 0.30
 
         # False = camino libre
         # True = obstaculo delante
