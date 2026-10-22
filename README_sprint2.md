@@ -525,6 +525,30 @@ ArUco:
 ros2 run g02_prii3_move_jetbot aruco_detection
 ```
 
+## Archivos principales de calibración
+
+La carpeta `calibracion/` contiene los scripts utilizados para preparar, comprobar y validar la calibración de la cámara y la detección de marcadores ArUco.
+
+- `comprobar_tablero.py`: recorre las imágenes de calibración y comprueba en cuáles se detecta correctamente el tablero de ajedrez de 13 x 9 esquinas interiores.
+
+- `calibrar_camara.py`: realiza una primera calibración de la cámara con las imágenes válidas y obtiene la matriz de cámara y los coeficientes de distorsión.
+
+- `comprobar_error.py`: calcula el error de reproyección de cada imagen para identificar las fotografías que empeoran la calibración.
+
+- `calibrar_filtrado.py`: elimina las imágenes con mayor error y vuelve a realizar la calibración utilizando únicamente las mejores capturas.
+
+- `CameraModel.yml`: almacena los parámetros finales de calibración (`cameraMatrix` y `distCoeffs`) que se utilizan posteriormente para corregir la distorsión de las imágenes y estimar la pose de los ArUco.
+
+- `rectificar_imagen.py`: carga los parámetros de `CameraModel.yml` y aplica la corrección de distorsión para comparar la imagen original con la imagen rectificada.
+
+- `comprobar_aruco.py`: prueba distintos diccionarios ArUco y permite comprobar si se detectan correctamente los marcadores y sus identificadores.
+
+- `aruco_pose.py`: detecta los marcadores ArUco y utiliza los parámetros de calibración para dibujar sus ejes de orientación 3D.
+
+- `publicar_imagen_ros.py`: publica una imagen almacenada como un mensaje ROS `sensor_msgs/msg/Image`, permitiendo probar los nodos de visión sin disponer físicamente de la cámara del JetBot.
+
+Estos scripts se utilizaron primero para comprobar el funcionamiento de la calibración y la detección ArUco de forma independiente. Posteriormente, la funcionalidad necesaria se integró en los nodos ROS del paquete `g02_prii3_move_jetbot`.
+
 ## Grupo
 
 Grupo 02
