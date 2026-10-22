@@ -14,3 +14,5 @@ calibracion/aruco_detectado.jpg
 # Ficheros de calibracion intermedios
 calibracion/CameraModel.yml
 calibracion/CameraModel_filtrado.yml
+
+PBI_2_3_DEMO_SIN_JETBOT.txt
