@@ -182,7 +182,7 @@ src/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot/collision_avoidance.py
 La zona frontal analizada es aproximadamente de `-15°` a `+15°` y la distancia de seguridad utilizada es:
 
 ```text
-0.45 m
+0.30 m
 ```
 
 Para probarlo, primero se inicia Gazebo:
