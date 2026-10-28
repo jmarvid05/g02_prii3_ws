@@ -1,29 +1,30 @@
-# g02_prii3_ws - Sprint 1
+# Sprint 1 - Turtlesim
 
-Workspace de ROS 2 del grupo 02 para la asignatura Robots Inteligentes.
+## Objetivo
 
-## Requisitos
+Hacer que turtlesim dibuje el numero **2** y poder **detener, reanudar y reiniciar** el dibujo.
 
-- Ubuntu 22.04 LTS
-- ROS 2 Humble
-- Python 3
-- turtlesim
+## Como funciona
 
-## Paquete
+El nodo `dibujar_2` tiene un **publisher**:
 
-El Sprint 1 utiliza el paquete:
+```text
+dibujar_2 -- geometry_msgs/Twist --> /turtle1/cmd_vel --> turtlesim
+```
 
-`g02_prii3_turtlesim`
+- `linear.x`: avance.
+- `angular.z`: giro.
+- La trayectoria se divide en acciones con una duracion.
 
-Este paquete controla turtlesim de forma autónoma para dibujar el número 2.
+Ademas ofrece tres **servicios** `std_srvs/srv/Trigger`:
 
-También dispone de servicios ROS 2 para:
+```text
+/detener_dibujo
+/reanudar_dibujo
+/reiniciar_dibujo
+```
 
-- Detener el dibujo
-- Reanudar el dibujo
-- Reiniciar el dibujo
-
-## Comandos juntos
+## Comandos - ejecucion
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
@@ -33,43 +34,7 @@ source install/setup.bash
 ros2 launch g02_prii3_turtlesim dibujar_2.launch.py
 ```
 
-## Compilación
-
-Situarse en la raíz del workspace:
-
-```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
-```
-
-Cargar ROS 2 Humble:
-
-```bash
-source /opt/ros/humble/setup.bash
-```
-
-Compilar:
-
-```bash
-colcon build --packages-select g02_prii3_turtlesim
-```
-
-Cargar el workspace:
-
-```bash
-source install/setup.bash
-```
-
-## Ejecución
-
-Ejecutar turtlesim y el nodo de control desde un único fichero launch:
-
-```bash
-ros2 launch g02_prii3_turtlesim dibujar_2.launch.py
-```
-
-La tortuga dibujará automáticamente el número 2.
-
-## Servicios
+## Comandos - servicios
 
 En otra terminal:
 
@@ -79,24 +44,22 @@ source /opt/ros/humble/setup.bash
 source install/setup.bash
 ```
 
-Detener el dibujo:
-
 ```bash
 ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reanudar el dibujo:
-
-```bash
 ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reiniciar el dibujo:
-
-```bash
 ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-## Grupo
+## Comandos - comprobar ROS
 
-Grupo 02
+```bash
+ros2 node list
+ros2 topic info /turtle1/cmd_vel
+ros2 service list
+```
+
+## Codigo principal
+
+```text
+src/g02_prii3_turtlesim/g02_prii3_turtlesim/dibujar_2.py
+```

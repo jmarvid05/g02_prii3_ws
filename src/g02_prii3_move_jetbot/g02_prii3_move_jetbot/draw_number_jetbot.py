@@ -4,150 +4,86 @@ from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger
 
 
-class DrawNumber(Node):
+class DrawNumberJetBot(Node):
+    """Dibuja el numero 2 en el JetBot real."""
 
     def __init__(self):
         super().__init__('draw_number')
 
-        self.publisher_ = self.create_publisher(
-            Twist,
-            '/cmd_vel',
-            10
-        )
+        # PUBLISHER: el controlador del JetBot esta suscrito a /cmd_vel.
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        self.timer = self.create_timer(
-            0.1,
-            self.move_robot
-        )
+        # Valores ajustados con el robot real.
+        self.tramos = [
+            (0.12, -0.55, 75),  # Curva superior
+            (0.12, 0.00, 35),   # Diagonal
+            (0.00, 0.80, 34),   # Giro a la izquierda
+            (0.12, 0.00, 33),   # Base
+        ]
 
-        self.estado = 0
-        self.contador = 0
+        self.tramo = 0
+        self.ciclos = 0
         self.pausado = False
 
-        self.create_service(
-            Trigger,
-            'detener_dibujo',
-            self.detener_dibujo
-        )
+        self.create_service(Trigger, '/detener_dibujo', self.detener)
+        self.create_service(Trigger, '/reanudar_dibujo', self.reanudar)
+        self.create_service(Trigger, '/reiniciar_dibujo', self.reiniciar)
 
-        self.create_service(
-            Trigger,
-            'reanudar_dibujo',
-            self.reanudar_dibujo
-        )
+        self.timer = self.create_timer(0.1, self.mover)
+        self.get_logger().info('draw_number del JetBot iniciado')
 
-        self.create_service(
-            Trigger,
-            'reiniciar_dibujo',
-            self.reiniciar_dibujo
-        )
-
-    def detener_dibujo(self, request, response):
+    def detener(self, request, response):
         self.pausado = True
-
-        msg = Twist()
-        self.publisher_.publish(msg)
-
-        self.get_logger().info('Dibujo detenido')
-
+        self.cmd_pub.publish(Twist())
         response.success = True
         response.message = 'Dibujo detenido'
-
         return response
 
-    def reanudar_dibujo(self, request, response):
+    def reanudar(self, request, response):
         self.pausado = False
-
-        self.get_logger().info('Dibujo reanudado')
-
         response.success = True
         response.message = 'Dibujo reanudado'
-
         return response
 
-    def reiniciar_dibujo(self, request, response):
-        self.estado = 0
-        self.contador = 0
+    def reiniciar(self, request, response):
+        self.tramo = 0
+        self.ciclos = 0
         self.pausado = False
-
-        msg = Twist()
-        self.publisher_.publish(msg)
-
-        self.get_logger().info('Dibujo reiniciado')
-
+        self.cmd_pub.publish(Twist())
         response.success = True
         response.message = 'Dibujo reiniciado'
-
         return response
 
-    def move_robot(self):
+    def mover(self):
         msg = Twist()
 
-        # Si el dibujo esta detenido, el robot permanece parado
-        if self.pausado:
-            self.publisher_.publish(msg)
+        if self.pausado or self.tramo >= len(self.tramos):
+            self.cmd_pub.publish(msg)
             return
 
-        # ESTADO 0: curva
-        if self.estado == 0:
-            msg.linear.x = 0.12
-            msg.angular.z = -0.55
+        lineal, angular, duracion = self.tramos[self.tramo]
+        msg.linear.x = lineal
+        msg.angular.z = angular
+        self.cmd_pub.publish(msg)
 
-            self.contador += 1
-
-            if self.contador >= 75:
-                self.estado = 1
-                self.contador = 0
-
-        # ESTADO 1: diagonal recta
-        elif self.estado == 1:
-            msg.linear.x = 0.12
-            msg.angular.z = 0.0
-
-            self.contador += 1
-
-            if self.contador >= 35:
-                self.estado = 2
-                self.contador = 0
-
-        # ESTADO 2: giro a la izquierda
-        elif self.estado == 2:
-            msg.linear.x = 0.0
-            msg.angular.z = 0.8
-
-            self.contador += 1
-
-            if self.contador >= 34:
-                self.estado = 3
-                self.contador = 0
-
-        # ESTADO 3: base recta
-        elif self.estado == 3:
-            msg.linear.x = 0.12
-            msg.angular.z = 0.0
-
-            self.contador += 1
-
-            if self.contador >= 33:
-                self.estado = 4
-                self.contador = 0
-
-        # ESTADO 4: parar
-        else:
-            msg.linear.x = 0.0
-            msg.angular.z = 0.0
-
-        self.publisher_.publish(msg)
+        self.ciclos += 1
+        if self.ciclos >= duracion:
+            self.tramo += 1
+            self.ciclos = 0
 
 
 def main(args=None):
     rclpy.init(args=args)
+    node = DrawNumberJetBot()
 
-    node = DrawNumber()
-    rclpy.spin(node)
-
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.cmd_pub.publish(Twist())
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

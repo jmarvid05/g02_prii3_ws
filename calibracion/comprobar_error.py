@@ -1,118 +1,71 @@
-import cv2
-import numpy as np
 import glob
 import os
 
+import cv2
+import numpy as np
+
 CHECKERBOARD = (13, 9)
+FLAGS = (
+    cv2.CALIB_CB_ADAPTIVE_THRESH
+    + cv2.CALIB_CB_NORMALIZE_IMAGE
+    + cv2.CALIB_CB_FAST_CHECK
+)
+FOTOS = 'calibracion/fotos'
 
 criteria = (
     cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
     30,
-    0.001
+    0.001,
 )
 
-objp = np.zeros(
-    (CHECKERBOARD[0] * CHECKERBOARD[1], 3),
-    np.float32
-)
-
-objp[:, :2] = np.mgrid[
-    0:CHECKERBOARD[0],
-    0:CHECKERBOARD[1]
-].T.reshape(-1, 2)
+objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
+objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 
 objpoints = []
 imgpoints = []
-rutas_validas = []
-
+nombres = []
 imagenes = []
 
-for extension in ["*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG"]:
-    imagenes.extend(
-        glob.glob(os.path.join("calibracion/fotos", extension))
-    )
-
+for extension in ('*.jpg', '*.jpeg', '*.png', '*.JPG', '*.JPEG', '*.PNG'):
+    imagenes.extend(glob.glob(os.path.join(FOTOS, extension)))
 imagenes.sort()
 
-gray = None
+gris = None
 
 for ruta in imagenes:
-
-    img = cv2.imread(ruta)
-
-    if img is None:
+    imagen = cv2.imread(ruta)
+    if imagen is None:
         continue
 
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    encontrado, corners = cv2.findChessboardCorners(
-        gray,
-        CHECKERBOARD,
-        cv2.CALIB_CB_ADAPTIVE_THRESH
-        + cv2.CALIB_CB_NORMALIZE_IMAGE
-        + cv2.CALIB_CB_FAST_CHECK
-    )
+    gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+    encontrado, esquinas = cv2.findChessboardCorners(gris, CHECKERBOARD, FLAGS)
 
     if encontrado:
-
-        corners2 = cv2.cornerSubPix(
-            gray,
-            corners,
-            (11, 11),
-            (-1, -1),
-            criteria
-        )
-
+        esquinas = cv2.cornerSubPix(gris, esquinas, (11, 11), (-1, -1), criteria)
         objpoints.append(objp)
-        imgpoints.append(corners2)
-        rutas_validas.append(ruta)
+        imgpoints.append(esquinas)
+        nombres.append(os.path.basename(ruta))
 
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
-    objpoints,
-    imgpoints,
-    gray.shape[::-1],
-    None,
-    None
+if not objpoints:
+    raise RuntimeError('No hay imagenes validas para calibrar')
+
+error_global, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+    objpoints, imgpoints, gris.shape[::-1], None, None
 )
 
 errores = []
-
 for i in range(len(objpoints)):
-
+    # Proyectamos los puntos 3D y los comparamos con los corners detectados.
     proyectados, _ = cv2.projectPoints(
-        objpoints[i],
-        rvecs[i],
-        tvecs[i],
-        mtx,
-        dist
+        objpoints[i], rvecs[i], tvecs[i], mtx, dist
     )
-
     diferencia = imgpoints[i] - proyectados
-
-    error = np.sqrt(
-        np.mean(
-            np.sum(diferencia ** 2, axis=2)
-        )
-    )
-
-    errores.append(
-        (error, os.path.basename(rutas_validas[i]))
-    )
+    error = np.sqrt(np.mean(np.sum(diferencia ** 2, axis=2)))
+    errores.append((error, nombres[i]))
 
 errores.sort(reverse=True)
 
-print("Error global de calibracion:", ret)
-print()
-print("Errores por imagen (de peor a mejor):")
-print()
-
+print('Error global:', error_global)
+print('Errores por imagen (peor -> mejor):')
 for error, nombre in errores:
-    print(f"{error:.3f} px  {nombre}")
-
-print()
-print("Matriz de camara:")
-print(mtx)
-
-print()
-print("Coeficientes de distorsion:")
-print(dist)
+    print(f'{error:.3f} px  {nombre}')

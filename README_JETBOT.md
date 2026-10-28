@@ -1,47 +1,52 @@
-# Ejecución en JetBot real
+# JetBot 02 / jetbot03M
 
-Este documento explica cómo ejecutar los nodos desarrollados para el **JetBot real**.
+## Datos
 
-El JetBot utiliza **ROS 2 Foxy**.
+```text
+IP: 172.16.190.184
+Usuario SSH: jetbot
+ROS 2: Foxy
+ROS_DOMAIN_ID: 2
+```
 
-## 1. Arrancar el JetBot
+## Conectar por SSH
 
-En una primera terminal:
+```bash
+ssh jetbot@172.16.190.184
+```
+
+## Idea ROS usada
+
+```text
+PUBLISHER ---- topic ----> SUBSCRIBER
+```
+
+En el JetBot:
+
+```text
+collision_avoidance SUBSCRIBE /filtered_scan
+collision_avoidance PUBLISH   /cmd_vel
+laser_filter        SUBSCRIBE /scan
+laser_filter        PUBLISH   /filtered_scan
+```
+
+El controlador base del JetBot esta suscrito a `/cmd_vel`.
+
+---
+
+# 1. Terminal 1 - arrancar la base
 
 ```bash
 source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
+export ROS_DOMAIN_ID=2
+export ROS_LOCALHOST_ONLY=0
 ros2 launch jetbot_pro_ros2 jetbot.py
 ```
 
-Esta terminal debe permanecer abierta mientras se utiliza el robot.
+Dejar esta terminal abierta.
 
-## 2. Descargar o actualizar el proyecto
-
-El repositorio debe estar disponible en:
-
-```text
-~/g02_prii3_ws
-```
-
-Para clonar desde cero:
-
-```bash
-cd ~
-git clone https://github.com/jmarvid05/g02_prii3_ws.git
-cd ~/g02_prii3_ws
-```
-
-Si ya existe:
-
-```bash
-cd ~/g02_prii3_ws
-git pull origin main
-```
-
-## 3. Compilar el paquete del JetBot
-
-En una segunda terminal:
+# 2. Terminal 2 - preparar el proyecto
 
 ```bash
 cd ~/g02_prii3_ws
@@ -49,360 +54,136 @@ source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 colcon build --packages-select g02_prii3_move_jetbot
 source install/setup.bash
+export ROS_DOMAIN_ID=2
+export ROS_LOCALHOST_ONLY=0
 ```
 
-## 4. Dibujar el número 2
-
-Con la base del JetBot arrancada en la primera terminal:
+# 3. Movimiento autonomo
 
 ```bash
-cd ~/g02_prii3_ws
-source /opt/ros/foxy/setup.bash
-source ~/jetbot_ws/install/setup.bash
-source install/setup.bash
 ros2 launch g02_prii3_move_jetbot draw_number_jetbot.launch.py
 ```
 
-El código se encuentra en:
+Valores del robot real:
 
 ```text
-src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/draw_number_jetbot.py
+Curva:    linear 0.12  angular -0.55  75 ciclos
+Diagonal: linear 0.12  angular  0.00  35 ciclos
+Giro:     linear 0.00  angular  0.80  34 ciclos
+Base:     linear 0.12  angular  0.00  33 ciclos
 ```
 
-## 5. Valores ajustados para el robot real
-
-### Estado 0 - Curva
-
-```python
-msg.linear.x = 0.12
-msg.angular.z = -0.55
-self.contador >= 75
-```
-
-### Estado 1 - Diagonal recta
-
-```python
-msg.linear.x = 0.12
-msg.angular.z = 0.0
-self.contador >= 35
-```
-
-### Estado 2 - Giro a la izquierda
-
-```python
-msg.linear.x = 0.0
-msg.angular.z = 0.8
-self.contador >= 34
-```
-
-### Estado 3 - Base recta
-
-```python
-msg.linear.x = 0.12
-msg.angular.z = 0.0
-self.contador >= 33
-```
-
-## 6. Servicios de control del dibujo
-
-El nodo `draw_number_jetbot` dispone de tres servicios:
-
-- `/detener_dibujo`
-- `/reanudar_dibujo`
-- `/reiniciar_dibujo`
-
-Los tres utilizan:
-
-```text
-std_srvs/srv/Trigger
-```
-
-Detener:
+Servicios:
 
 ```bash
 ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reanudar:
-
-```bash
 ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reiniciar:
-
-```bash
 ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-## 7. Evitación de obstáculos
+# 4. LiDAR y filtro
 
-El paquete `g02_prii3_move_jetbot` incluye dos nodos para el PBI 2.2:
-
-```text
-collision_avoidance
-obstacle_avoidance
-```
-
-Ambos utilizan el LiDAR mediante mensajes `sensor_msgs/msg/LaserScan` y publican el movimiento en `/cmd_vel`.
-
-### Collision avoidance
-
-El nodo `collision_avoidance` continúa dibujando el número 2 mientras el camino está libre.
-
-Cuando detecta un obstáculo delante a menos de la distancia de seguridad, el JetBot se detiene completamente y congela el contador de la trayectoria.
-
-Cuando el obstáculo desaparece, el robot continúa el dibujo desde el punto lógico en el que se encontraba.
-
-Ejecución:
+Comprobar el sensor:
 
 ```bash
-ros2 run g02_prii3_move_jetbot collision_avoidance
+ros2 topic type /scan
+ros2 interface show sensor_msgs/msg/LaserScan
+ros2 topic echo /scan --once
+ros2 topic hz /scan
 ```
 
-Por defecto utiliza:
+El filtro hace:
 
 ```text
-scan_topic = /scan
+/scan -> laser_filter -> /filtered_scan
 ```
 
-Si el LiDAR publica en otro topic:
+Ejecucion manual:
 
 ```bash
-ros2 run g02_prii3_move_jetbot collision_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+ros2 run g02_prii3_move_jetbot laser_filter
 ```
 
-La distancia de seguridad inicial es:
-
-```text
-0.45 m
-```
-
-### Obstacle avoidance
-
-El nodo `obstacle_avoidance` esquiva el obstáculo sin quedarse parado.
-
-El LiDAR analiza tres sectores:
-
-```text
-Frente:     -20° a +20°
-Izquierda:  +20° a +90°
-Derecha:    -90° a -20°
-```
-
-Al detectar un obstáculo delante, compara el espacio disponible a izquierda y derecha y elige el lado más libre.
-
-La maniobra consta de:
-
-1. `GIRO_SALIDA`: avanza mientras gira para separarse del obstáculo.
-2. `AVANCE`: continúa avanzando para superarlo.
-3. `GIRO_RETORNO`: gira en sentido contrario mientras avanza para recuperar aproximadamente la orientación anterior.
-
-Ejecución:
+Parametros:
 
 ```bash
-ros2 run g02_prii3_move_jetbot obstacle_avoidance
+ros2 param set /laser_filter laser_angle 60.0
+ros2 param set /laser_filter distance 2.0
 ```
 
-Para utilizar otro topic de LiDAR:
+# 5. Collision avoidance
+
+Funcionamiento:
+
+```text
+/filtered_scan -> collision_avoidance -> /cmd_vel
+
+obstaculo delante -> Twist = 0 y contador congelado
+camino libre      -> continua el dibujo
+```
+
+Ejecucion recomendada, con filtro incluido:
 
 ```bash
-ros2 run g02_prii3_move_jetbot obstacle_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+ros2 launch g02_prii3_move_jetbot collision_avoidance_jetbot.launch.py
 ```
 
-Valores iniciales de la maniobra:
+Valores iniciales:
 
 ```text
-Distancia de detección: 0.50 m
-Velocidad lineal durante la esquiva: 0.10 m/s
-Velocidad angular durante los giros: +/-0.8 rad/s
-GIRO_SALIDA: 15 ciclos
-AVANCE: 25 ciclos
-GIRO_RETORNO: 15 ciclos
+distance = 0.30 m
+front_angle_deg = 30
+front_offset_deg = 180
 ```
 
-La lógica de ambos nodos está implementada y compilada. Antes de dar por definitivos los parámetros del robot real, deben comprobarse físicamente en el JetBot y ajustarse si fuera necesario.
+# 6. Comprobar publishers/subscribers
 
-## 8. Calibración de cámara
-
-El fichero de calibración utilizado se encuentra en:
-
-```text
-src/g02_prii3_move_jetbot/config/CameraModel.yml
+```bash
+ros2 node info /laser_filter
+ros2 node info /collision_avoidance
+ros2 topic info /scan -v
+ros2 topic info /filtered_scan -v
+ros2 topic info /cmd_vel -v
 ```
 
-Contiene:
+# 7. Camara
 
-```text
-cameraMatrix
-distCoeffs
-```
-
-Los parámetros fueron obtenidos a partir del conjunto de imágenes de calibración utilizado en clase.
-
-## 9. Rectificación de imagen
-
-El nodo:
-
-```text
-camera_rectification
-```
-
-recibe imágenes de la cámara y muestra una comparación entre:
-
-```text
-ORIGINAL
-RECTIFICADA
-```
-
-El topic de cámara se configura mediante el parámetro:
-
-```text
-image_topic
-```
-
-Por defecto:
+Topic usado:
 
 ```text
 /camera/image_raw
 ```
 
-Ejecución manual:
+Comprobar stream:
 
 ```bash
-ros2 run g02_prii3_move_jetbot camera_rectification
+ros2 topic hz /camera/image_raw
 ```
 
-Para utilizar otro topic:
+Ver desde el portatil:
 
 ```bash
-ros2 run g02_prii3_move_jetbot camera_rectification --ros-args -p image_topic:=/topic/de/la/camara
+ros2 run rqt_image_view rqt_image_view
 ```
 
-## 10. Detección de ArUco
-
-El nodo:
-
-```text
-aruco_detection
-```
-
-detecta marcadores del diccionario:
-
-```text
-DICT_4X4_50
-```
-
-y muestra:
-
-- ID del ArUco.
-- Contorno detectado.
-- Ejes de orientación 3D.
-
-Ejecución manual:
+Vision del proyecto:
 
 ```bash
-ros2 run g02_prii3_move_jetbot aruco_detection
-```
-
-El tamaño del marcador está configurado actualmente como:
-
-```text
-0.05 m
-```
-
-Este valor debe ajustarse al tamaño físico real del ArUco si se necesita una escala de traslación precisa.
-
-## 11. Launch de visión
-
-Para ejecutar rectificación y detección ArUco simultáneamente:
-
-```bash
-cd ~/g02_prii3_ws
-source /opt/ros/foxy/setup.bash
-source ~/jetbot_ws/install/setup.bash
-source install/setup.bash
 ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py
 ```
 
-Si el topic real de la cámara es diferente:
+# 8. Parar el robot
 
-```bash
-ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py image_topic:=/topic/de/la/camara
-```
-
-Para conocer los topics disponibles:
-
-```bash
-ros2 topic list
-```
-
-## 12. Comprobaciones
-
-Nodos activos:
-
-```bash
-ros2 node list
-```
-
-Servicios del dibujo:
-
-```bash
-ros2 service list
-```
-
-Deben aparecer:
-
-```text
-/detener_dibujo
-/reanudar_dibujo
-/reiniciar_dibujo
-```
-
-Comprobar que el JetBot está suscrito a `/cmd_vel`:
-
-```bash
-ros2 node info /jetbot
-```
-
-Visualizar los comandos enviados:
-
-```bash
-ros2 topic echo /cmd_vel
-```
-
-## 13. Editar y recompilar
-
-Editar el movimiento:
-
-```bash
-code ~/g02_prii3_ws/src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/draw_number_jetbot.py
-```
-
-Después de realizar cambios:
-
-```bash
-cd ~/g02_prii3_ws
-source /opt/ros/foxy/setup.bash
-source ~/jetbot_ws/install/setup.bash
-colcon build --packages-select g02_prii3_move_jetbot
-source install/setup.bash
-```
-
-## 14. Parar el robot
-
-Detener un nodo:
+Cerrar el nodo:
 
 ```text
 Ctrl+C
 ```
 
-Si fuera necesario enviar velocidad cero manualmente:
+Parada manual de emergencia desde ROS:
 
 ```bash
 ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0}, angular: {z: 0.0}}"
 ```
 
-## Grupo
-
-**Grupo 02**
+> No ejecutar dos nodos de movimiento al mismo tiempo: competirian publicando sobre `/cmd_vel`.

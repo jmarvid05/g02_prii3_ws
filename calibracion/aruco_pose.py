@@ -1,140 +1,100 @@
 import cv2
+import numpy as np
 
-# Ruta de la imagen donde queremos detectar el ArUco
-ruta_imagen = "calibracion/fotos/2026-09-24-194027.jpg"
-
-# Ruta de los datos de calibracion de la camara
-ruta_calibracion = "calibracion/CameraModel.yml"
-
-# Tamaño real del marcador ArUco
+IMAGEN = 'calibracion/fotos/2026-09-24-194027.jpg'
+CALIBRACION = 'calibracion/CameraModel.yml'
+SALIDA = 'calibracion/aruco_detectado.jpg'
 MARKER_SIZE = 0.05  # 5 cm
 
 
-# Cargar la imagen
-img = cv2.imread(ruta_imagen)
+def detectar_aruco(gris):
+    """Detecta DICT_4X4_50 en OpenCV nuevo o antiguo."""
+    if hasattr(cv2.aruco, 'ArucoDetector'):
+        diccionario = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+        detector = cv2.aruco.ArucoDetector(
+            diccionario, cv2.aruco.DetectorParameters()
+        )
+        return detector.detectMarkers(gris)
 
-# Comprobar que la imagen se ha cargado
-if img is None:
-    print("No se pudo cargar la imagen")
-    exit()
-
-# Convertir la imagen a escala de grises
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    diccionario = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+    parametros = cv2.aruco.DetectorParameters_create()
+    return cv2.aruco.detectMarkers(gris, diccionario, parameters=parametros)
 
 
-# Abrir el archivo de calibracion
-fs = cv2.FileStorage(
-    ruta_calibracion,
-    cv2.FILE_STORAGE_READ
-)
+def calcular_pose(corner, camera_matrix, dist_coeffs):
+    """Calcula rotacion y traslacion del marcador."""
+    # En OpenCV antiguo existe estimatePoseSingleMarkers.
+    if hasattr(cv2.aruco, 'estimatePoseSingleMarkers'):
+        rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+            [corner], MARKER_SIZE, camera_matrix, dist_coeffs
+        )
+        return rvecs[0], tvecs[0]
 
-# Leer la matriz de la camara
-camera_matrix = fs.getNode("cameraMatrix").mat()
+    # En OpenCV nuevo hacemos la misma estimacion con solvePnP.
+    half = MARKER_SIZE / 2.0
+    object_points = np.array([
+        [-half,  half, 0.0],
+        [ half,  half, 0.0],
+        [ half, -half, 0.0],
+        [-half, -half, 0.0],
+    ], dtype=np.float32)
 
-# Leer los coeficientes de distorsion
-dist_coeffs = fs.getNode("distCoeffs").mat()
+    ok, rvec, tvec = cv2.solvePnP(
+        object_points,
+        corner[0].astype(np.float32),
+        camera_matrix,
+        dist_coeffs,
+        flags=cv2.SOLVEPNP_IPPE_SQUARE,
+    )
+    if not ok:
+        raise RuntimeError('No se pudo calcular la pose del ArUco')
+    return rvec, tvec
 
-# Cerrar el archivo
+
+imagen = cv2.imread(IMAGEN)
+if imagen is None:
+    raise RuntimeError(f'No se pudo cargar {IMAGEN}')
+
+gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+
+# Cargar cameraMatrix y distCoeffs.
+fs = cv2.FileStorage(CALIBRACION, cv2.FILE_STORAGE_READ)
+camera_matrix = fs.getNode('cameraMatrix').mat()
+dist_coeffs = fs.getNode('distCoeffs').mat()
 fs.release()
 
+corners, ids, _ = detectar_aruco(gris)
 
-# Seleccionar el diccionario de ArUcos
-diccionario = cv2.aruco.Dictionary_get(
-    cv2.aruco.DICT_4X4_50
-)
+if ids is None:
+    print('No se han detectado ArUcos')
+else:
+    cv2.aruco.drawDetectedMarkers(imagen, corners, ids)
 
-# Crear los parametros del detector
-parametros = cv2.aruco.DetectorParameters_create()
+    for i, marker_id in enumerate(ids.flatten()):
+        rvec, tvec = calcular_pose(corners[i], camera_matrix, dist_coeffs)
+        print('ArUco detectado - ID:', int(marker_id))
 
-
-# Detectar los marcadores ArUco
-corners, ids, rechazados = cv2.aruco.detectMarkers(
-    gray,
-    diccionario,
-    parameters=parametros
-)
-
-
-# Comprobar si se ha detectado algun ArUco
-if ids is not None:
-
-    # Dibujar el contorno de los ArUcos detectados
-    cv2.aruco.drawDetectedMarkers(
-        img,
-        corners,
-        ids
-    )
-
-    # Calcular la posicion y orientacion 3D de cada ArUco
-    rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
-        corners,
-        MARKER_SIZE,
-        camera_matrix,
-        dist_coeffs
-    )
-
-    # Recorrer todos los ArUcos detectados
-    for i in range(len(ids)):
-
-        # Obtener el ID del marcador
-        marker_id = ids[i][0]
-
-        print("ArUco detectado - ID:", marker_id)
-
-        # Dibujar los ejes X, Y, Z del marcador
         cv2.drawFrameAxes(
-            img,
+            imagen,
             camera_matrix,
             dist_coeffs,
-            rvecs[i],
-            tvecs[i],
-            MARKER_SIZE * 0.5
+            rvec,
+            tvec,
+            MARKER_SIZE * 0.5,
         )
 
-        # Obtener una esquina del ArUco
-        esquina = corners[i][0][0]
-
-        x = int(esquina[0])
-        y = int(esquina[1])
-
-        # Escribir el ID encima del marcador
+        x, y = corners[i][0][0].astype(int)
         cv2.putText(
-            img,
-            f"ID: {marker_id}",
+            imagen,
+            f'ID: {int(marker_id)}',
             (x, y - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.8,
             (0, 255, 0),
-            2
+            2,
         )
 
-else:
-    print("No se han detectado ArUcos")
-
-
-# Guardar la imagen con el resultado
-cv2.imwrite(
-    "calibracion/aruco_detectado.jpg",
-    img
-)
-
-
-# Reducir el tamaño para verla mejor en pantalla
-pantalla = cv2.resize(
-    img,
-    None,
-    fx=0.6,
-    fy=0.6
-)
-
-# Mostrar la imagen
-cv2.imshow(
-    "Deteccion ArUco",
-    pantalla
-)
-
-# Esperar hasta pulsar una tecla
+cv2.imwrite(SALIDA, imagen)
+cv2.imshow('Deteccion ArUco', cv2.resize(imagen, None, fx=0.6, fy=0.6))
 cv2.waitKey(0)
-
-# Cerrar la ventana
 cv2.destroyAllWindows()

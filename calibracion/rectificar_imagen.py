@@ -1,112 +1,39 @@
 import cv2
 import numpy as np
 
-# Imagen que vamos a rectificar
-ruta_imagen = "calibracion/fotos/2026-09-24-194027.jpg"
+IMAGEN = 'calibracion/fotos/2026-09-24-194027.jpg'
+CALIBRACION = 'calibracion/CameraModel.yml'
+SALIDA = 'calibracion/comparacion_rectificacion.jpg'
 
-# Archivo con los parametros de calibracion
-ruta_calibracion = "calibracion/CameraModel.yml"
-
-
-# Cargar parametros de calibracion
-fs = cv2.FileStorage(
-    ruta_calibracion,
-    cv2.FILE_STORAGE_READ
-)
-
-camera_matrix = fs.getNode("cameraMatrix").mat()
-dist_coeffs = fs.getNode("distCoeffs").mat()
-
+# Cargar la calibracion.
+fs = cv2.FileStorage(CALIBRACION, cv2.FILE_STORAGE_READ)
+camera_matrix = fs.getNode('cameraMatrix').mat()
+dist_coeffs = fs.getNode('distCoeffs').mat()
 fs.release()
 
+imagen = cv2.imread(IMAGEN)
+if imagen is None:
+    raise RuntimeError(f'No se pudo cargar {IMAGEN}')
 
-# Cargar imagen original
-img = cv2.imread(ruta_imagen)
-
-if img is None:
-    print("No se pudo cargar la imagen")
-    exit()
-
-
-h, w = img.shape[:2]
-
-
-# Calcular una nueva matriz de camara
-new_camera_matrix, roi = cv2.getOptimalNewCameraMatrix(
-    camera_matrix,
-    dist_coeffs,
-    (w, h),
-    1,
-    (w, h)
+h, w = imagen.shape[:2]
+new_matrix, _ = cv2.getOptimalNewCameraMatrix(
+    camera_matrix, dist_coeffs, (w, h), 1, (w, h)
 )
 
-
-# Rectificar la imagen
+# Corrige la distorsion de la lente usando la calibracion.
 rectificada = cv2.undistort(
-    img,
-    camera_matrix,
-    dist_coeffs,
-    None,
-    new_camera_matrix
+    imagen, camera_matrix, dist_coeffs, None, new_matrix
 )
 
+original = imagen.copy()
+cv2.putText(original, 'ORIGINAL', (40, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 3)
+cv2.putText(rectificada, 'RECTIFICADA', (40, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 3)
 
-# Añadir textos para comparar
-original = img.copy()
+comparacion = np.hstack((original, rectificada))
+cv2.imwrite(SALIDA, comparacion)
 
-cv2.putText(
-    original,
-    "ORIGINAL",
-    (40, 60),
-    cv2.FONT_HERSHEY_SIMPLEX,
-    1.5,
-    (0, 255, 0),
-    3
-)
-
-cv2.putText(
-    rectificada,
-    "RECTIFICADA",
-    (40, 60),
-    cv2.FONT_HERSHEY_SIMPLEX,
-    1.5,
-    (0, 255, 0),
-    3
-)
-
-
-# Poner las dos imagenes una al lado de la otra
-comparacion = np.hstack(
-    (original, rectificada)
-)
-
-
-# Reducir solo para visualizar en pantalla
-escala = 0.5
-
-comparacion_pantalla = cv2.resize(
-    comparacion,
-    None,
-    fx=escala,
-    fy=escala
-)
-
-
-# Guardar resultado completo
-cv2.imwrite(
-    "calibracion/comparacion_rectificacion.jpg",
-    comparacion
-)
-
-
-# Mostrar
-cv2.imshow(
-    "Original vs Rectificada",
-    comparacion_pantalla
-)
-
-print("Comparacion guardada en:")
-print("calibracion/comparacion_rectificacion.jpg")
-
+pantalla = cv2.resize(comparacion, None, fx=0.5, fy=0.5)
+cv2.imshow('Original vs Rectificada', pantalla)
+print('Comparacion guardada en', SALIDA)
 cv2.waitKey(0)
 cv2.destroyAllWindows()

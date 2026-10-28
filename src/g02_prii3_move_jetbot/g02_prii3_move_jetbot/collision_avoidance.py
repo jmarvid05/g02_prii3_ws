@@ -3,208 +3,116 @@ import math
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import LaserScan
 
 
 class CollisionAvoidance(Node):
+    """Collision avoidance para el JetBot real."""
 
     def __init__(self):
         super().__init__('collision_avoidance')
 
-        # Permite cambiar el topic del LiDAR sin modificar el codigo
         self.declare_parameter('scan_topic', '/scan')
+        self.declare_parameter('distance', 0.30)
+        self.declare_parameter('front_angle_deg', 30.0)
 
-        scan_topic = (
-            self.get_parameter('scan_topic')
-            .get_parameter_value()
-            .string_value
-        )
+        # En nuestro JetBot el frente del LiDAR esta desplazado 180 grados.
+        self.declare_parameter('front_offset_deg', 180.0)
 
-        # Publicador de velocidad del JetBot
-        self.publisher_ = self.create_publisher(
-            Twist,
-            '/cmd_vel',
-            10
-        )
+        scan_topic = self.get_parameter('scan_topic').value
 
-        # Lectura del LiDAR
-        self.subscription = self.create_subscription(
+        # SUBSCRIBER: recibe sensor_msgs/LaserScan del LiDAR.
+        self.scan_sub = self.create_subscription(
             LaserScan,
             scan_topic,
             self.scan_callback,
-            qos_profile_sensor_data
+            qos_profile_sensor_data,
         )
 
-        # Movimiento cada 0.1 segundos
-        self.timer = self.create_timer(
-            0.1,
-            self.move_robot
-        )
+        # PUBLISHER: controla el JetBot mediante geometry_msgs/Twist.
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        # Estados del dibujo del numero 2
-        self.estado = 0
-        self.contador = 0
+        # Valores ajustados para el robot real.
+        self.tramos = [
+            (0.12, -0.55, 75),
+            (0.12, 0.00, 35),
+            (0.00, 0.80, 34),
+            (0.12, 0.00, 33),
+        ]
 
-        # Distancia a la que detenemos el robot
-        self.distancia_seguridad = 0.30
-
-        # False = camino libre
-        # True = obstaculo delante
+        self.tramo = 0
+        self.ciclos = 0
         self.obstaculo = False
+        self.timer = self.create_timer(0.1, self.mover)
 
-        self.get_logger().info(
-            'Collision avoidance del JetBot iniciado'
-        )
-
-        self.get_logger().info(
-            'Esperando LiDAR en: ' + scan_topic
-        )
+        self.get_logger().info(f'Leyendo LiDAR de {scan_topic}')
 
     def scan_callback(self, msg):
+        distancia_limite = float(self.get_parameter('distance').value)
+        medio_sector = math.radians(
+            float(self.get_parameter('front_angle_deg').value) / 2.0
+        )
+        offset = math.radians(float(self.get_parameter('front_offset_deg').value))
 
-        # Miramos 15 grados a cada lado del frente
-        angulo_frontal = math.radians(15)
-
-        distancias_frontales = []
+        distancias = []
 
         for i, distancia in enumerate(msg.ranges):
-
-            angulo = (
-                msg.angle_min
-                + i * msg.angle_increment
+            angulo = msg.angle_min + i * msg.angle_increment
+            relativo = math.atan2(
+                math.sin(angulo - offset),
+                math.cos(angulo - offset),
             )
 
-            # Normalizamos el angulo entre -pi y +pi
-            angulo_normalizado = math.atan2(
-                math.sin(angulo - math.pi),
-                math.cos(angulo - math.pi)
+            lectura_valida = (
+                math.isfinite(distancia)
+                and msg.range_min <= distancia <= msg.range_max
             )
 
-            # Solo analizamos el sector situado delante
-            if (
-                -angulo_frontal
-                <= angulo_normalizado
-                <= angulo_frontal
-            ):
+            if abs(relativo) <= medio_sector and lectura_valida:
+                distancias.append(distancia)
 
-                if math.isfinite(distancia):
-                    distancias_frontales.append(distancia)
+        minima = min(distancias) if distancias else math.inf
+        antes = self.obstaculo
+        self.obstaculo = minima < distancia_limite
 
-        # Si no hay ninguna lectura valida delante,
-        # consideramos el camino libre
-        if distancias_frontales:
-            distancia_minima = min(distancias_frontales)
-        else:
-            distancia_minima = math.inf
+        if self.obstaculo and not antes:
+            self.get_logger().info('Obstaculo detectado: JetBot detenido')
+        elif antes and not self.obstaculo:
+            self.get_logger().info('Camino libre: reanudando dibujo')
 
-        habia_obstaculo = self.obstaculo
-
-        self.obstaculo = (
-            distancia_minima
-            < self.distancia_seguridad
-        )
-
-        # Mostramos el mensaje solo cuando cambia el estado
-        if self.obstaculo and not habia_obstaculo:
-
-            self.get_logger().info(
-                'Obstaculo detectado. JetBot detenido.'
-            )
-
-        elif not self.obstaculo and habia_obstaculo:
-
-            self.get_logger().info(
-                'Obstaculo desaparecido. Reanudando marcha.'
-            )
-
-    def move_robot(self):
-
+    def mover(self):
         msg = Twist()
 
-        # Si hay un obstaculo:
-        # velocidad 0 y congelamos la trayectoria
         if self.obstaculo:
-
-            self.publisher_.publish(msg)
+            self.cmd_pub.publish(msg)
             return
 
-        # Estado 0: curva superior
-        if self.estado == 0:
+        if self.tramo >= len(self.tramos):
+            self.cmd_pub.publish(msg)
+            return
 
-            msg.linear.x = 0.12
-            msg.angular.z = -0.55
+        lineal, angular, duracion = self.tramos[self.tramo]
+        msg.linear.x = lineal
+        msg.angular.z = angular
+        self.cmd_pub.publish(msg)
 
-            self.contador += 1
-
-            if self.contador >= 75:
-                self.estado = 1
-                self.contador = 0
-
-        # Estado 1: diagonal
-        elif self.estado == 1:
-
-            msg.linear.x = 0.12
-            msg.angular.z = 0.0
-
-            self.contador += 1
-
-            if self.contador >= 35:
-                self.estado = 2
-                self.contador = 0
-
-        # Estado 2: giro inferior
-        elif self.estado == 2:
-
-            msg.linear.x = 0.0
-            msg.angular.z = 0.8
-
-            self.contador += 1
-
-            if self.contador >= 34:
-                self.estado = 3
-                self.contador = 0
-
-        # Estado 3: base
-        elif self.estado == 3:
-
-            msg.linear.x = 0.12
-            msg.angular.z = 0.0
-
-            self.contador += 1
-
-            if self.contador >= 33:
-                self.estado = 4
-                self.contador = 0
-
-        # Dibujo terminado
-        else:
-
-            msg.linear.x = 0.0
-            msg.angular.z = 0.0
-
-        self.publisher_.publish(msg)
+        self.ciclos += 1
+        if self.ciclos >= duracion:
+            self.tramo += 1
+            self.ciclos = 0
 
 
 def main(args=None):
-
     rclpy.init(args=args)
-
     node = CollisionAvoidance()
 
     try:
         rclpy.spin(node)
-
     except KeyboardInterrupt:
         pass
-
     finally:
-
-        # Intentamos dejar el robot parado al cerrar el nodo
-        stop = Twist()
-        node.publisher_.publish(stop)
-
+        node.cmd_pub.publish(Twist())
         node.destroy_node()
         rclpy.shutdown()
 

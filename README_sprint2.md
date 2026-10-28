@@ -1,56 +1,93 @@
-# g02_prii3_ws - Sprint 2
+# Sprint 2 - Movimiento, LiDAR y vision
 
-Workspace de ROS 2 del grupo 02 para la asignatura Robots Inteligentes.
+## Objetivo del Sprint
 
-## Requisitos
+Para el Grupo 02:
 
-### Simulación
+1. Separar codigo de simulacion y robot real.
+2. Dibujar autonomamente el numero **2**.
+3. Detener el robot al detectar un obstaculo delante y reanudar cuando desaparece.
+4. Calibrar la camara y detectar ArUcos.
+5. Mantener GitHub y los README actualizados.
 
-- Ubuntu 22.04 LTS
-- ROS 2 Humble
-- Python 3
-- TurtleBot3
-- Gazebo
-- RViz2
-- OpenCV
-- cv_bridge
+El PBI 2.2 de esta version se centra en `collision_avoidance`.
 
-### JetBot real
+---
 
-El JetBot utiliza ROS 2 Foxy. Las instrucciones específicas para el robot real se encuentran en `README_JETBOT.md`.
+# 1. Publisher y Subscriber
 
-## Paquetes
-
-El Sprint 2 utiliza dos paquetes:
-
-- `g02_prii3_move_turtlebot`: nodos utilizados para la simulación con TurtleBot3 en Gazebo.
-- `g02_prii3_move_jetbot`: nodos destinados al robot real JetBot, incluyendo movimiento y visión.
-
-## PBI 2.1 - Movimiento autónomo
-
-### Simulación
-
-El nodo:
+Es la comunicacion principal de ROS 2 que usamos:
 
 ```text
-draw_number
+PUBLISHER ---- topic ----> SUBSCRIBER
+   envia                    recibe
 ```
 
-publica mensajes de tipo:
+En nuestro proyecto:
 
 ```text
-geometry_msgs/msg/Twist
+draw_number         -- /cmd_vel -------> controlador del robot
+LiDAR               -- /scan ----------> laser_filter
+laser_filter        -- /filtered_scan --> collision_avoidance
+collision_avoidance -- /cmd_vel -------> controlador del robot
+odometria           -- /odom ----------> trail_node
+trail_node          -- /robot_path -----> RViz
+camara              -- /camera/image_raw -> vision
 ```
 
-en:
+Un mismo nodo puede ser subscriber y publisher. Por ejemplo `collision_avoidance` **recibe** el LiDAR y **publica** velocidades.
+
+Los **servicios** son diferentes: sirven para hacer una peticion puntual y recibir una respuesta.
+
+---
+
+# 2. PBI 2.0 - Paquetes
 
 ```text
-/cmd_vel
+g02_prii3_move_turtlebot -> simulacion TurtleBot3 / ROS 2 Humble
+g02_prii3_move_jetbot    -> JetBot real / ROS 2 Foxy
 ```
 
-para realizar la trayectoria correspondiente al número 2.
+---
 
-La simulación se ejecuta con:
+# 3. PBI 2.1 - Movimiento autonomo
+
+## Como funciona
+
+`draw_number` publica `geometry_msgs/msg/Twist` en `/cmd_vel`.
+
+```text
+tramo 1 -> curva
+tramo 2 -> diagonal
+tramo 3 -> giro
+tramo 4 -> base
+```
+
+Cada tramo guarda:
+
+```text
+(linear.x, angular.z, numero de ciclos)
+```
+
+El timer se ejecuta cada `0.1 s`.
+
+## Servicios
+
+```text
+/detener_dibujo   -> pausa y publica velocidad cero
+/reanudar_dibujo  -> continua desde el mismo punto
+/reiniciar_dibujo -> vuelve al primer tramo
+```
+
+## Rastro en RViz
+
+`trail_node` es subscriber y publisher:
+
+```text
+/odom -> trail_node -> /robot_path -> RViz
+```
+
+## Comandos - simulacion del dibujo
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
@@ -60,386 +97,229 @@ source install/setup.bash
 ros2 launch g02_prii3_move_turtlebot draw_number.launch.py
 ```
 
-El fichero launch inicia automáticamente:
-
-- Gazebo
-- Mundo vacío de TurtleBot3
-- TurtleBot3 Burger
-- Nodo `draw_number`
-- Nodo `trail_node`
-- RViz2
-
-### Servicios de control del dibujo
-
-El nodo `draw_number` dispone de tres servicios:
-
-- `/detener_dibujo`: detiene temporalmente el movimiento.
-- `/reanudar_dibujo`: continúa desde el punto en el que se detuvo.
-- `/reiniciar_dibujo`: reinicia la trayectoria desde el primer estado.
-
-Los tres utilizan:
-
-```text
-std_srvs/srv/Trigger
-```
-
-Detener:
-
-```bash
-ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reanudar:
-
-```bash
-ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
-```
-
-Reiniciar:
-
-```bash
-ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
-```
-
-El nodo muestra por terminal cuándo el dibujo ha sido detenido, reanudado o reiniciado.
-
-### Rastro en RViz
-
-El nodo:
-
-```text
-trail_node
-```
-
-recibe la odometría desde:
-
-```text
-/odom
-```
-
-y publica un:
-
-```text
-nav_msgs/msg/Path
-```
-
-en:
-
-```text
-/robot_path
-```
-
-RViz utiliza:
-
-```text
-Fixed Frame: odom
-Path -> /robot_path
-```
-
-para visualizar el recorrido del TurtleBot3.
-
-### JetBot real
-
-La versión para robot real se encuentra en:
-
-```text
-src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/draw_number_jetbot.py
-```
-
-También dispone de los servicios:
-
-```text
-/detener_dibujo
-/reanudar_dibujo
-/reiniciar_dibujo
-```
-
-Las instrucciones completas de ejecución están en `README_JETBOT.md`.
-
-## PBI 2.2 - Evitación de obstáculos
-
-Se han implementado dos comportamientos de evitación de obstáculos tanto para simulación como para el JetBot real:
-
-- `collision_avoidance`: el robot se detiene cuando detecta un obstáculo delante y reanuda el dibujo cuando el obstáculo desaparece.
-- `obstacle_avoidance`: el robot esquiva el obstáculo sin quedarse detenido y después continúa el dibujo.
-
-### Collision avoidance
-
-El nodo utiliza los datos del LiDAR publicados como `sensor_msgs/msg/LaserScan`.
-
-Mientras no haya ningún obstáculo delante, el robot continúa ejecutando la trayectoria del número 2.
-
-Si detecta un obstáculo dentro de la distancia de seguridad, publica velocidad cero en `/cmd_vel` y congela el contador de la trayectoria. De esta forma, al desaparecer el obstáculo, el robot continúa desde el mismo punto lógico del dibujo.
-
-#### Simulación
-
-El nodo de simulación se encuentra en:
-
-```text
-src/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot/collision_avoidance.py
-```
-
-La zona frontal analizada es aproximadamente de `-15°` a `+15°` y la distancia de seguridad utilizada es:
-
-```text
-0.30 m
-```
-
-Para probarlo, primero se inicia Gazebo:
-
-```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
-source /opt/ros/humble/setup.bash
-source install/setup.bash
-export TURTLEBOT3_MODEL=burger
-ros2 launch turtlebot3_gazebo empty_world.launch.py
-```
-
 En otra terminal:
 
 ```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
 source /opt/ros/humble/setup.bash
-source install/setup.bash
-ros2 run g02_prii3_move_turtlebot collision_avoidance
+source ~/UNI/PROYECTOS3/g02_prii3_ws/install/setup.bash
+ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
+ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
+ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-Comportamiento comprobado en simulación:
+---
+
+# 4. PBI 2.2 - Collision avoidance
+
+## Datos del LiDAR
+
+El LiDAR publica:
 
 ```text
-Dibuja el 2
--> detecta un obstáculo delante
--> se detiene
--> el obstáculo desaparece
--> reanuda el dibujo desde donde se había detenido
+Topic: /scan
+Tipo:  sensor_msgs/msg/LaserScan
 ```
 
-#### JetBot real
+Campos importantes:
 
-La versión para el robot real se encuentra en:
+- `angle_min`, `angle_max`: limites del escaneo.
+- `angle_increment`: separacion angular entre medidas.
+- `range_min`, `range_max`: distancia valida del sensor.
+- `ranges[]`: distancias medidas.
 
-```text
-src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/collision_avoidance.py
-```
-
-Ejecución:
+### Comandos para comprobar el LiDAR
 
 ```bash
-ros2 run g02_prii3_move_jetbot collision_avoidance
+ros2 topic type /scan
+ros2 interface show sensor_msgs/msg/LaserScan
+ros2 topic echo /scan --once
+ros2 topic hz /scan
 ```
 
-El topic del LiDAR es configurable mediante el parámetro `scan_topic`.
+## laser_filter.py
 
-Por defecto:
+Es un ejemplo muy claro de publisher/subscriber:
 
 ```text
-/scan
+LiDAR -> /scan -> [SUBSCRIBER laser_filter PUBLISHER] -> /filtered_scan
 ```
 
-Si el LiDAR del JetBot utiliza otro topic:
+Filtra por:
+
+- `laser_angle`: angulo que queremos conservar.
+- `distance`: distancia maxima que queremos conservar.
+
+Cambiar parametros mientras funciona:
 
 ```bash
-ros2 run g02_prii3_move_jetbot collision_avoidance --ros-args -p scan_topic:=/topic_del_lidar
+ros2 param set /laser_filter laser_angle 60.0
+ros2 param set /laser_filter distance 2.0
 ```
 
-La lógica está implementada y compilada, pero debe validarse físicamente en el JetBot.
-
-### Obstacle avoidance
-
-El nodo `obstacle_avoidance` evita el obstáculo sin quedarse parado.
-
-El LiDAR divide el entorno en tres sectores:
-
-```text
-Frente:     -20° a +20°
-Izquierda:  +20° a +90°
-Derecha:    -90° a -20°
-```
-
-Cuando se detecta un obstáculo delante, el robot compara las distancias izquierda y derecha y elige el lado con más espacio libre.
-
-La maniobra está dividida en tres fases:
-
-1. `GIRO_SALIDA`: avanza mientras gira hacia el lado elegido.
-2. `AVANCE`: continúa avanzando para superar el obstáculo.
-3. `GIRO_RETORNO`: avanza mientras gira hacia el lado contrario para recuperar aproximadamente la orientación anterior.
-
-Mientras se realiza la esquiva, el contador del dibujo del número 2 queda congelado. Al terminar la maniobra, el dibujo continúa desde el estado en el que se encontraba.
-
-#### Simulación
-
-El nodo se encuentra en:
-
-```text
-src/g02_prii3_move_turtlebot/g02_prii3_move_turtlebot/obstacle_avoidance.py
-```
-
-Ejecución:
+Ver el resultado:
 
 ```bash
-ros2 run g02_prii3_move_turtlebot obstacle_avoidance
+ros2 topic echo /filtered_scan --once
 ```
 
-Valores comprobados en simulación:
+## collision_avoidance.py
+
+Tambien es subscriber y publisher:
 
 ```text
-Distancia de detección: 0.50 m
-Velocidad lineal durante la esquiva: 0.10 m/s
-Velocidad angular durante los giros: +/-0.8 rad/s
-GIRO_SALIDA: 15 ciclos
-AVANCE: 25 ciclos
-GIRO_RETORNO: 15 ciclos
+/filtered_scan -> collision_avoidance -> /cmd_vel
+       SUBSCRIBER                 PUBLISHER
 ```
 
-El temporizador del nodo se ejecuta cada `0.1 s`, por lo que los 15 ciclos de giro corresponden aproximadamente a `1.5 s` y los 25 ciclos de avance a `2.5 s`.
-
-El comportamiento se ha probado en Gazebo y el TurtleBot rodea el obstáculo sin quedarse parado, recupera aproximadamente su orientación y continúa la trayectoria.
-
-#### JetBot real
-
-La versión para el JetBot se encuentra en:
+Algoritmo:
 
 ```text
-src/g02_prii3_move_jetbot/g02_prii3_move_jetbot/obstacle_avoidance.py
+1. Recibe LaserScan.
+2. Mira el sector frontal.
+3. Busca la distancia valida mas pequena.
+4. Si distancia < distancia de seguridad:
+      publica Twist = 0
+      NO aumenta el contador del dibujo
+5. Cuando desaparece el obstaculo:
+      vuelve a publicar la trayectoria
+      continua desde el mismo punto
 ```
 
-Ejecución:
-
-```bash
-ros2 run g02_prii3_move_jetbot obstacle_avoidance
-```
-
-También permite modificar el topic del LiDAR:
-
-```bash
-ros2 run g02_prii3_move_jetbot obstacle_avoidance --ros-args -p scan_topic:=/topic_del_lidar
-```
-
-Los valores iniciales de la maniobra son los mismos que los comprobados en simulación. La lógica está implementada y compilada, pero los tiempos, velocidades y distancias deben comprobarse y ajustarse físicamente en el JetBot si fuera necesario.
-## PBI 2.3 - Calibración de cámara y ArUco
-
-La parte de visión está incluida en el paquete:
+Valores iniciales:
 
 ```text
-g02_prii3_move_jetbot
+Simulacion: distancia = 0.45 m, frente = 30 grados
+JetBot:     distancia = 0.30 m, frente = 30 grados
+JetBot LiDAR: front_offset_deg = 180
 ```
 
-### Calibración de cámara
+## Comandos - collision avoidance en simulacion
 
-Se utilizaron imágenes de un tablero de ajedrez tomadas desde diferentes posiciones y ángulos.
-
-El patrón utilizado contiene:
-
-```text
-13 x 9 esquinas interiores
-```
-
-El proceso realizado es:
-
-1. Detección del tablero con `cv2.findChessboardCorners()`.
-2. Refinado subpíxel con `cv2.cornerSubPix()`.
-3. Cálculo de los parámetros con `cv2.calibrateCamera()`.
-4. Análisis del error de reproyección.
-5. Filtrado de imágenes con mayor error.
-6. Generación del fichero de calibración.
-
-El fichero final se encuentra en:
-
-```text
-src/g02_prii3_move_jetbot/config/CameraModel.yml
-```
-
-Contiene:
-
-```text
-cameraMatrix
-distCoeffs
-```
-
-La calibración filtrada utilizada obtuvo un error aproximado de:
-
-```text
-1.19
-```
-
-### Rectificación de imagen
-
-El nodo:
-
-```text
-camera_rectification
-```
-
-carga `CameraModel.yml`, recibe imágenes desde el topic de la cámara y muestra simultáneamente:
-
-```text
-ORIGINAL
-RECTIFICADA
-```
-
-El nodo utiliza `cv2.undistort()` para corregir la distorsión de la imagen.
-
-### Detección ArUco
-
-El nodo:
-
-```text
-aruco_detection
-```
-
-utiliza el diccionario:
-
-```text
-DICT_4X4_50
-```
-
-y muestra:
-
-- El ID de cada marcador detectado.
-- El contorno del marcador.
-- Los ejes de orientación 3D.
-
-En las imágenes de prueba se detectaron correctamente los IDs:
-
-```text
-21
-36
-```
-
-El tamaño configurado actualmente para el marcador es:
-
-```text
-0.05 m
-```
-
-Este valor debe ajustarse al tamaño físico real del ArUco si se necesita una escala de traslación precisa.
-
-### Launch de visión
-
-Los dos nodos de visión se pueden ejecutar conjuntamente con:
+El launch abre Gazebo, el filtro LiDAR, `collision_avoidance`, el rastro y RViz:
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
 source /opt/ros/humble/setup.bash
+colcon build --packages-select g02_prii3_move_turtlebot
 source install/setup.bash
-ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py
+ros2 launch g02_prii3_move_turtlebot collision_avoidance.launch.py
 ```
 
-Por defecto se utiliza:
+Para la demostracion, coloca un objeto delante del TurtleBot3 en Gazebo:
+
+```text
+camino libre -> dibuja el 2
+objeto delante -> se para
+retirar objeto -> continua desde el mismo punto
+```
+
+### Comprobar publishers y subscribers
+
+```bash
+ros2 node info /collision_avoidance
+ros2 node info /laser_filter
+ros2 topic info /scan -v
+ros2 topic info /filtered_scan -v
+ros2 topic info /cmd_vel -v
+```
+
+---
+
+# 5. JetBot real
+
+## Datos del robot
+
+```text
+JetBot 02 / jetbot03M
+IP: 172.16.190.184
+Usuario: jetbot
+ROS 2: Foxy
+ROS_DOMAIN_ID: 2
+```
+
+Conectar:
+
+```bash
+ssh jetbot@172.16.190.184
+```
+
+## Terminal 1 - base del JetBot
+
+```bash
+source /opt/ros/foxy/setup.bash
+source ~/jetbot_ws/install/setup.bash
+export ROS_DOMAIN_ID=2
+export ROS_LOCALHOST_ONLY=0
+ros2 launch jetbot_pro_ros2 jetbot.py
+```
+
+## Terminal 2 - compilar proyecto
+
+```bash
+cd ~/g02_prii3_ws
+source /opt/ros/foxy/setup.bash
+source ~/jetbot_ws/install/setup.bash
+colcon build --packages-select g02_prii3_move_jetbot
+source install/setup.bash
+export ROS_DOMAIN_ID=2
+export ROS_LOCALHOST_ONLY=0
+```
+
+## Dibujar el 2
+
+```bash
+ros2 launch g02_prii3_move_jetbot draw_number_jetbot.launch.py
+```
+
+## Collision avoidance
+
+El launch ejecuta:
+
+```text
+/scan -> laser_filter -> /filtered_scan -> collision_avoidance -> /cmd_vel
+```
+
+```bash
+ros2 launch g02_prii3_move_jetbot collision_avoidance_jetbot.launch.py
+```
+
+> Ejecutar un solo nodo de movimiento a la vez. No ejecutar `draw_number` y `collision_avoidance` simultaneamente porque ambos publican en `/cmd_vel`.
+
+---
+
+# 6. PBI 2.3 - Calibracion y ArUco
+
+Esta parte ya se presento por separado, pero se conserva en el repositorio.
+
+Flujo:
+
+```text
+comprobar_tablero.py
+        -> calibrar_filtrado.py
+        -> CameraModel.yml
+        -> rectificar_imagen.py
+        -> aruco_pose.py
+```
+
+Los nodos ROS de vision se suscriben a:
 
 ```text
 /camera/image_raw
 ```
 
-El topic puede cambiarse al lanzar:
+## Comandos - prueba con imagenes guardadas
 
 ```bash
-ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py image_topic:=/topic/de/la/camara
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+python3 calibracion/comprobar_tablero.py
+python3 calibracion/calibrar_filtrado.py
+python3 calibracion/rectificar_imagen.py
+python3 calibracion/aruco_pose.py
 ```
 
-### Prueba sin el JetBot
+## Comandos - simular stream de camara ROS
 
-Para comprobar el sistema sin disponer físicamente del robot, se puede publicar una imagen guardada en `/camera/image_raw`:
+Terminal 1:
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
@@ -448,7 +328,7 @@ source install/setup.bash
 python3 calibracion/publicar_imagen_ros.py
 ```
 
-En otra terminal:
+Terminal 2:
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
@@ -457,98 +337,51 @@ source install/setup.bash
 ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py
 ```
 
-Se abren dos ventanas:
+---
 
-```text
-Original vs Rectificada
-Deteccion ArUco
-```
+# 7. PBI 2.4 - GitHub
 
-## Compilar los paquetes del Sprint 2
-
-Desde la raíz del workspace:
+Comprobar antes de subir:
 
 ```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
-source /opt/ros/humble/setup.bash
-colcon build --packages-select g02_prii3_move_turtlebot g02_prii3_move_jetbot
-source install/setup.bash
+git status
+git diff
 ```
 
-## Ejecución manual de nodos
-
-Movimiento en simulación:
+Subir cambios:
 
 ```bash
-ros2 run g02_prii3_move_turtlebot draw_number
+git add -A
+git commit -m "Finaliza Sprint 2"
+git pull --rebase origin main
+git push origin main
 ```
 
-Rastro:
+Comprobacion final:
 
 ```bash
-ros2 run g02_prii3_move_turtlebot trail_node
+git status
 ```
 
-Collision avoidance en simulación:
+---
+
+# 8. Comandos rapidos para la defensa
 
 ```bash
-ros2 run g02_prii3_move_turtlebot collision_avoidance
+# Ver nodos, topics y servicios
+ros2 node list
+ros2 topic list
+ros2 service list
+
+# Saber quien publica y quien se suscribe
+ros2 topic info /cmd_vel -v
+ros2 topic info /scan -v
+ros2 topic info /filtered_scan -v
+
+# Ver informacion de un nodo
+ros2 node info /collision_avoidance
+ros2 node info /laser_filter
+
+# Ver una lectura LiDAR
+ros2 topic echo /scan --once
 ```
-
-Obstacle avoidance en simulación:
-
-```bash
-ros2 run g02_prii3_move_turtlebot obstacle_avoidance
-```
-
-Collision avoidance en JetBot:
-
-```bash
-ros2 run g02_prii3_move_jetbot collision_avoidance
-```
-
-Obstacle avoidance en JetBot:
-
-```bash
-ros2 run g02_prii3_move_jetbot obstacle_avoidance
-```
-
-Rectificación:
-
-```bash
-ros2 run g02_prii3_move_jetbot camera_rectification
-```
-
-ArUco:
-
-```bash
-ros2 run g02_prii3_move_jetbot aruco_detection
-```
-
-## Archivos principales de calibración
-
-La carpeta `calibracion/` contiene los scripts utilizados para preparar, comprobar y validar la calibración de la cámara y la detección de marcadores ArUco.
-
-- `comprobar_tablero.py`: recorre las imágenes de calibración y comprueba en cuáles se detecta correctamente el tablero de ajedrez de 13 x 9 esquinas interiores.
-
-- `calibrar_camara.py`: realiza una primera calibración de la cámara con las imágenes válidas y obtiene la matriz de cámara y los coeficientes de distorsión.
-
-- `comprobar_error.py`: calcula el error de reproyección de cada imagen para identificar las fotografías que empeoran la calibración.
-
-- `calibrar_filtrado.py`: elimina las imágenes con mayor error y vuelve a realizar la calibración utilizando únicamente las mejores capturas.
-
-- `CameraModel.yml`: almacena los parámetros finales de calibración (`cameraMatrix` y `distCoeffs`) que se utilizan posteriormente para corregir la distorsión de las imágenes y estimar la pose de los ArUco.
-
-- `rectificar_imagen.py`: carga los parámetros de `CameraModel.yml` y aplica la corrección de distorsión para comparar la imagen original con la imagen rectificada.
-
-- `comprobar_aruco.py`: prueba distintos diccionarios ArUco y permite comprobar si se detectan correctamente los marcadores y sus identificadores.
-
-- `aruco_pose.py`: detecta los marcadores ArUco y utiliza los parámetros de calibración para dibujar sus ejes de orientación 3D.
-
-- `publicar_imagen_ros.py`: publica una imagen almacenada como un mensaje ROS `sensor_msgs/msg/Image`, permitiendo probar los nodos de visión sin disponer físicamente de la cámara del JetBot.
-
-Estos scripts se utilizaron primero para comprobar el funcionamiento de la calibración y la detección ArUco de forma independiente. Posteriormente, la funcionalidad necesaria se integró en los nodos ROS del paquete `g02_prii3_move_jetbot`.
-
-## Grupo
-
-Grupo 02
