@@ -6,7 +6,7 @@
 IP: 172.16.190.184
 Usuario SSH: jetbot
 ROS 2: Foxy
-ROS_DOMAIN_ID: 2
+ROS_DOMAIN_ID: 184
 ```
 
 ## Conectar por SSH
@@ -39,7 +39,7 @@ El controlador base del JetBot esta suscrito a `/cmd_vel`.
 ```bash
 source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 ros2 launch jetbot_pro_ros2 jetbot.py
 ```
@@ -54,7 +54,7 @@ source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 colcon build --packages-select g02_prii3_move_jetbot
 source install/setup.bash
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 ```
 

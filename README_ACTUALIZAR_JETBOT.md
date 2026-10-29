@@ -126,7 +126,7 @@ No debe aparecer `obstacle_avoidance.py` como código del Sprint 2 actual.
 source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 ```
 
@@ -179,7 +179,7 @@ g02_prii3_move_jetbot laser_filter
 source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 
 ros2 launch jetbot_pro_ros2 jetbot.py
@@ -197,7 +197,7 @@ En otra terminal del JetBot:
 source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 
 ros2 topic list | grep scan
@@ -222,7 +222,7 @@ source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 source install/setup.bash
 
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 
 ros2 launch g02_prii3_move_jetbot draw_number_jetbot.launch.py
@@ -249,7 +249,7 @@ source /opt/ros/foxy/setup.bash
 source ~/jetbot_ws/install/setup.bash
 source install/setup.bash
 
-export ROS_DOMAIN_ID=2
+export ROS_DOMAIN_ID=184
 export ROS_LOCALHOST_ONLY=0
 
 ros2 launch g02_prii3_move_jetbot collision_avoidance_jetbot.launch.py
