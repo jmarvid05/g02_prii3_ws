@@ -8,7 +8,7 @@ MARKER_SIZE = 0.05  # 5 cm
 
 
 def detectar_aruco(gris):
-    """Detecta DICT_4X4_50 en OpenCV nuevo o antiguo."""
+    """Detecta DICT_4X4_100 en OpenCV nuevo o antiguo."""
     if hasattr(cv2.aruco, 'ArucoDetector'):
         diccionario = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         detector = cv2.aruco.ArucoDetector(
