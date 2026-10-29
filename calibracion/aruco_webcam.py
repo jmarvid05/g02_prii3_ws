@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 # Configuracion
 CAMARA = 1
@@ -11,19 +12,27 @@ camera_matrix = fs.getNode('cameraMatrix').mat()
 dist_coeffs = fs.getNode('distCoeffs').mat()
 fs.release()
 
-# Configurar detector ArUco
+# Detector ArUco
 diccionario = cv2.aruco.getPredefinedDictionary(
     cv2.aruco.DICT_4X4_100
 )
-
 parametros = cv2.aruco.DetectorParameters_create()
+
+# Puntos 3D del marcador
+mitad = TAMANO_ARUCO / 2
+
+puntos_3d = np.array([
+    [-mitad,  mitad, 0],
+    [ mitad,  mitad, 0],
+    [ mitad, -mitad, 0],
+    [-mitad, -mitad, 0],
+], dtype=np.float32)
 
 # Abrir webcam
 camara = cv2.VideoCapture(CAMARA)
 
 while True:
 
-    # Leer imagen de la webcam
     ret, frame = camara.read()
 
     if not ret:
@@ -36,7 +45,6 @@ while True:
         parameters=parametros
     )
 
-    # Si se detecta algun ArUco
     if ids is not None:
 
         # Dibujar borde e ID
@@ -46,16 +54,18 @@ while True:
             ids
         )
 
-        # Calcular posicion y orientacion
-        rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
-            esquinas,
-            TAMANO_ARUCO,
-            camera_matrix,
-            dist_coeffs
-        )
+        # Calcular pose y dibujar ejes
+        for esquina in esquinas:
 
-        # Dibujar ejes XYZ en cada ArUco
-        for rvec, tvec in zip(rvecs, tvecs):
+            puntos_2d = esquina.reshape(4, 2)
+
+            _, rvec, tvec = cv2.solvePnP(
+                puntos_3d,
+                puntos_2d,
+                camera_matrix,
+                dist_coeffs,
+                flags=cv2.SOLVEPNP_IPPE_SQUARE
+            )
 
             cv2.drawFrameAxes(
                 frame,
@@ -66,13 +76,12 @@ while True:
                 TAMANO_ARUCO
             )
 
-    # Mostrar resultado
+    # Mostrar imagen
     cv2.imshow('ArUco tiempo real', frame)
 
-    # Salir pulsando Q
+    # Salir con Q
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Cerrar
 camara.release()
 cv2.destroyAllWindows()
