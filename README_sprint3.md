@@ -1,4 +1,4 @@
 ### Comando para detectar arucos en tiempo real
 
 ```bash
-python3 calibracion/aruco_webcam.py
+python3 g02_prii3_ws/calibracion/aruco_webcam.py
