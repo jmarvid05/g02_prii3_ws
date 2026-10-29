@@ -9,3 +9,4 @@ python3 calibracion/aruco_webcam.py
 v4l2-ctl --list-devices
 ls -l /dev/video*
 ```
+Cámara portatil = 1, cámara I3L7 = 5.
