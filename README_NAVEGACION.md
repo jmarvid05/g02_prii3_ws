@@ -1,8 +1,8 @@
 # Navegación — Simulación y JetBot real
 
-## 1. SIMULACIÓN
+# 1. SIMULACIÓN
 
-### Terminal 1 — Gazebo
+## Terminal 1 — Gazebo
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
@@ -15,7 +15,7 @@ ros2 launch f1l3_gazebo f1l3_world.launch.py
 
 ---
 
-### Terminal 2 — Navigation2 + RViz + mapa guardado
+## Terminal 2 — Navigation2 + RViz + mapa guardado
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
@@ -32,14 +32,32 @@ En RViz:
 
 ```text
 1. 2D Pose Estimate
-2. Marcar posición y orientación del robot
+2. Marcar posición y orientación
 3. Nav2 Goal
 4. Marcar destino
 ```
 
 ---
 
-### Terminal 3 — Mando Xbox
+# 2. MANDOS EN SIMULACIÓN
+
+## Comprobar mando conectado
+
+```bash
+source /opt/ros/humble/setup.bash
+
+ros2 run joy joy_enumerate_devices
+```
+
+Normalmente:
+
+```text
+device_id = 0
+```
+
+---
+
+## Mando Xbox
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -49,7 +67,81 @@ joy_dev:=0 \
 config_filepath:=$HOME/UNI/PROYECTOS3/g02_prii3_ws/config/xbox_no_enable.yaml
 ```
 
-Comprobar:
+### Archivo Xbox
+
+Crear:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+mkdir -p config
+vim config/xbox_no_enable.yaml
+```
+
+Contenido:
+
+```yaml
+teleop_twist_joy_node:
+  ros__parameters:
+    axis_linear:
+      x: 1
+
+    scale_linear:
+      x: 0.5
+
+    axis_angular:
+      yaw: 0
+
+    scale_angular:
+      yaw: 1.0
+
+    require_enable_button: false
+```
+
+---
+
+## Mando PlayStation
+
+```bash
+source /opt/ros/humble/setup.bash
+
+ros2 launch teleop_twist_joy teleop-launch.py \
+joy_dev:=0 \
+config_filepath:=$HOME/UNI/PROYECTOS3/g02_prii3_ws/config/playstation_no_enable.yaml
+```
+
+### Archivo PlayStation
+
+Crear:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+mkdir -p config
+vim config/playstation_no_enable.yaml
+```
+
+Contenido:
+
+```yaml
+teleop_twist_joy_node:
+  ros__parameters:
+    axis_linear:
+      x: 1
+
+    scale_linear:
+      x: 0.5
+
+    axis_angular:
+      yaw: 0
+
+    scale_angular:
+      yaw: 1.0
+
+    require_enable_button: false
+```
+
+---
+
+## Comprobar `/cmd_vel`
 
 ```bash
 ros2 topic echo /cmd_vel
@@ -57,23 +149,15 @@ ros2 topic echo /cmd_vel
 
 ---
 
-## Cámara en RViz
+# 3. CÁMARA EN RVIZ
 
-Ver topics de cámara:
+Buscar topics:
 
 ```bash
 ros2 topic list | grep -E 'camera|image'
 ```
 
-En RViz:
-
-```text
-Add
-→ Image
-→ Topic de la cámara
-```
-
-También se pueden añadir:
+En RViz añadir:
 
 ```text
 Map        → /map
@@ -85,7 +169,7 @@ Image      → topic de cámara
 
 ---
 
-# 2. JETBOT REAL
+# 4. JETBOT REAL
 
 ## Terminal 1 — Conectarse al JetBot
 
@@ -93,7 +177,7 @@ Image      → topic de cámara
 ssh jetbot@172.16.190.172
 ```
 
-Arrancar el robot:
+Arrancar robot:
 
 ```bash
 export ROS_DOMAIN_ID=172
@@ -102,7 +186,7 @@ export ROS_LOCALHOST_ONLY=0
 ros2 launch jetbot_pro_ros2 jetbot.py
 ```
 
-Dejar esta terminal abierta.
+Dejar abierta.
 
 ---
 
@@ -117,37 +201,25 @@ export ROS_DOMAIN_ID=172
 export ROS_LOCALHOST_ONLY=0
 ```
 
-Comprobar dominio:
-
-```bash
-echo $ROS_DOMAIN_ID
-```
-
-Debe salir:
-
-```text
-172
-```
-
-Comprobar conexión:
+Comprobar comunicación:
 
 ```bash
 ros2 topic list
 ```
 
-Comprobar LiDAR:
+LiDAR:
 
 ```bash
 ros2 topic hz /scan
 ```
 
-Comprobar odometría:
+Odometría:
 
 ```bash
 ros2 topic echo /odom --once
 ```
 
-Comprobar TF:
+TF:
 
 ```bash
 ros2 topic list | grep tf
@@ -155,7 +227,9 @@ ros2 topic list | grep tf
 
 ---
 
-## Terminal 3 — Mando Xbox desde el portátil
+# 5. MANDO XBOX CON JETBOT REAL
+
+Mando conectado al portátil:
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -176,7 +250,30 @@ ros2 topic echo /cmd_vel
 
 ---
 
-## RViz con JetBot
+# 6. MANDO PLAYSTATION CON JETBOT REAL
+
+Mando conectado al portátil:
+
+```bash
+source /opt/ros/humble/setup.bash
+
+export ROS_DOMAIN_ID=172
+export ROS_LOCALHOST_ONLY=0
+
+ros2 launch teleop_twist_joy teleop-launch.py \
+joy_dev:=0 \
+config_filepath:=$HOME/UNI/PROYECTOS3/g02_prii3_ws/config/playstation_no_enable.yaml
+```
+
+Comprobar:
+
+```bash
+ros2 topic echo /cmd_vel
+```
+
+---
+
+# 7. RViz CON JETBOT
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -204,9 +301,9 @@ ros2 topic list | grep -E 'camera|image'
 
 ---
 
-# Navegación automática JetBot
+# 8. NAVEGACIÓN AUTOMÁTICA JETBOT
 
-Para navegar sobre un mapa guardado necesitamos arrancar:
+Necesitamos:
 
 ```text
 Map Server
@@ -214,7 +311,7 @@ AMCL
 Nav2
 ```
 
-Después en RViz:
+En RViz:
 
 ```text
 2D Pose Estimate
@@ -226,7 +323,7 @@ Nav2 Goal
 
 ## PENDIENTE
 
-Crear/probar el launch específico de Navigation2 para el JetBot real.
+Crear y probar el launch específico de Navigation2 para el JetBot real.
 
 No usar directamente:
 
@@ -234,9 +331,9 @@ No usar directamente:
 ros2 launch turtlebot3_navigation2 navigation2.launch.py
 ```
 
-porque esa configuración es para TurtleBot3.
+porque esa configuración es específica del TurtleBot3.
 
-La configuración del JetBot deberá utilizar:
+El JetBot deberá usar:
 
 ```text
 /scan
@@ -246,18 +343,11 @@ La configuración del JetBot deberá utilizar:
 /cmd_vel
 ```
 
-y los frames reales del JetBot.
+y sus frames reales.
 
 ---
 
-# ROS DOMAIN
-
-Para trabajar con el JetBot real:
-
-```bash
-export ROS_DOMAIN_ID=172
-export ROS_LOCALHOST_ONLY=0
-```
+# 9. ROS DOMAIN = 172 PERMANENTE
 
 Tanto el portátil como el JetBot deben usar:
 
@@ -265,70 +355,13 @@ Tanto el portátil como el JetBot deben usar:
 ROS_DOMAIN_ID=172
 ```
 
----
-
-# Dejar ROS_DOMAIN_ID=172 permanente
-
-Así no hace falta escribir los `export` cada vez que se abre una terminal.
-
 ## Portátil
 
-Abrir:
-
 ```bash
 vim ~/.bashrc
 ```
 
-Al final del archivo añadir:
-
-```bash
-export ROS_DOMAIN_ID=172
-export ROS_LOCALHOST_ONLY=0
-```
-
-Guardar en Vim:
-
-```text
-Esc
-:wq
-Enter
-```
-
-Aplicar los cambios:
-
-```bash
-source ~/.bashrc
-```
-
-Comprobar:
-
-```bash
-echo $ROS_DOMAIN_ID
-```
-
-Debe salir:
-
-```text
-172
-```
-
----
-
-## JetBot
-
-Entrar por SSH:
-
-```bash
-ssh jetbot@172.16.190.172
-```
-
-Abrir:
-
-```bash
-vim ~/.bashrc
-```
-
-Al final añadir:
+Añadir al final:
 
 ```bash
 export ROS_DOMAIN_ID=172
@@ -363,18 +396,70 @@ Debe salir:
 
 ---
 
-## Resultado
+## JetBot
 
-Después de hacerlo en los dos equipos:
+Entrar:
+
+```bash
+ssh jetbot@172.16.190.172
+```
+
+Editar:
+
+```bash
+vim ~/.bashrc
+```
+
+Añadir:
+
+```bash
+export ROS_DOMAIN_ID=172
+export ROS_LOCALHOST_ONLY=0
+```
+
+Guardar:
+
+```text
+Esc
+:wq
+Enter
+```
+
+Aplicar:
+
+```bash
+source ~/.bashrc
+```
+
+Comprobar:
 
 ```bash
 echo $ROS_DOMAIN_ID
 ```
 
-debe mostrar:
+Debe salir:
 
 ```text
 172
 ```
 
-tanto en el portátil como en el JetBot.
+---
+
+# RESUMEN
+
+## Simulación
+
+```text
+Terminal 1 → Gazebo
+Terminal 2 → Navigation2 + RViz
+Terminal 3 → Xbox o PlayStation
+```
+
+## Robot real
+
+```text
+JetBot     → jetbot.py
+Portátil   → ROS_DOMAIN_ID=172
+Portátil   → Xbox o PlayStation
+Portátil   → RViz / Navigation2
+```
