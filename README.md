@@ -1,45 +1,65 @@
 # g02_prii3_ws - Grupo 02
 
-Workspace ROS 2 de **Proyecto RII 3: Robots Inteligentes**.
+Workspace ROS 2 del proyecto **Proyecto RII 3: Robots Inteligentes**.
 
-## Documentacion
+El repositorio contiene el trabajo realizado durante los distintos sprints del proyecto, tanto para simulación como para el robot JetBot real.
 
-- `README_sprint1.md`: Turtlesim y servicios.
-- `README_sprint2.md`: TurtleBot3, JetBot, LiDAR, collision avoidance y vision.
-- `README_JETBOT.md`: comandos especificos del robot real.
-- `CODIGOS_RESUMEN.md`: para que sirve cada script.
-- `DEMO_SPRINT2.md`: chuleta corta para la Sprint Review.
+## Documentación
 
-## Idea ROS 2 que usamos en todo el proyecto
+- [Sprint 1](README_sprint1.md)  
+  Turtlesim, movimiento y servicios ROS 2.
+
+- [Sprint 2](README_sprint2.md)  
+  TurtleBot3, JetBot, LiDAR, evitación de colisiones y visión.
+
+- [Sprint 3](README_sprint3.md)  
+  Navegación, SLAM, detección de ArUcos y navegación autónoma.
+
+- [JetBot real](README_JETBOT.md)  
+  Configuración, conexión, mapas y comandos específicos del JetBot.
+
+## Paquetes principales
 
 ```text
-PUBLISHER ---- topic ----> SUBSCRIBER
-   envia                    recibe
+src/
+├── f1l3_gazebo
+├── g02_prii3_move_jetbot
+├── g02_prii3_move_turtlebot
+├── g02_prii3_turtlesim
+├── g02_prii3_nav_jetbot
+└── g02_prii3_nav_turtlebot
 ```
 
-Ejemplos del proyecto:
+### Navegación
+
+Los paquetes utilizados en el Sprint 3 son:
 
 ```text
-draw_number        -- /cmd_vel ------> controlador del robot
-LiDAR              -- /scan ---------> laser_filter
-laser_filter       -- /filtered_scan -> collision_avoidance
-collision_avoidance -- /cmd_vel ------> controlador del robot
-odometria          -- /odom ---------> trail_node
-trail_node         -- /robot_path ---> RViz
-camara             -- /camera/image_raw -> nodos de vision
+g02_prii3_nav_turtlebot
 ```
 
-Los servicios `/detener_dibujo`, `/reanudar_dibujo` y `/reiniciar_dibujo` son distintos a los topics: son peticiones puntuales con respuesta.
-
-## JetBot del grupo
+Navegación y detección de ArUcos en simulación.
 
 ```text
-JetBot 02 / jetbot03M
-IP: 172.16.190.184
-SSH: ssh jetbot@172.16.190.184
-ROS_DOMAIN_ID: 2
+g02_prii3_nav_jetbot
+```
+
+Navegación y detección de ArUcos para el JetBot real.
+
+## Compilación del workspace
+
+Desde la raíz del proyecto:
+
+```bash
+source /opt/ros/humble/setup.bash
+
+colcon build --symlink-install
+
+source install/setup.bash
 ```
 
 ## Uso de Inteligencia Artificial
 
-Se ha utilizado IA como apoyo para organizar, revisar y documentar parte del codigo. Todo el codigo final se ha adaptado y probado dentro del proyecto.
+Se ha utilizado Inteligencia Artificial como herramienta de apoyo para organizar, revisar y documentar parte del código del proyecto.
+
+El código final ha sido adaptado y probado dentro del proyecto por los miembros del grupo.

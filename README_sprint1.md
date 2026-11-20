@@ -2,21 +2,49 @@
 
 ## Objetivo
 
-Hacer que turtlesim dibuje el numero **2** y poder **detener, reanudar y reiniciar** el dibujo.
+Hacer que `turtlesim` dibuje el número **2** de forma autónoma y permitir detener, reanudar y reiniciar el dibujo mediante servicios ROS 2.
 
-## Como funciona
-
-El nodo `dibujar_2` tiene un **publisher**:
+## Paquete
 
 ```text
-dibujar_2 -- geometry_msgs/Twist --> /turtle1/cmd_vel --> turtlesim
+g02_prii3_turtlesim
 ```
 
-- `linear.x`: avance.
-- `angular.z`: giro.
-- La trayectoria se divide en acciones con una duracion.
+El nodo principal publica velocidades en:
 
-Ademas ofrece tres **servicios** `std_srvs/srv/Trigger`:
+```text
+/turtle1/cmd_vel
+```
+
+utilizando mensajes:
+
+```text
+geometry_msgs/Twist
+```
+
+La trayectoria se divide en movimientos lineales y giros para formar el número 2.
+
+## Compilación y ejecución
+
+Desde la raíz del workspace:
+
+```bash
+cd ~/UNI/PROYECTOS3/g02_prii3_ws
+
+source /opt/ros/humble/setup.bash
+
+colcon build --packages-select g02_prii3_turtlesim
+
+source install/setup.bash
+
+ros2 launch g02_prii3_turtlesim dibujar_2.launch.py
+```
+
+El launch inicia `turtlesim` y el nodo encargado de realizar el dibujo.
+
+## Servicios
+
+El nodo dispone de tres servicios:
 
 ```text
 /detener_dibujo
@@ -24,33 +52,34 @@ Ademas ofrece tres **servicios** `std_srvs/srv/Trigger`:
 /reiniciar_dibujo
 ```
 
-## Comandos - ejecucion
-
-```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
-source /opt/ros/humble/setup.bash
-colcon build --packages-select g02_prii3_turtlesim
-source install/setup.bash
-ros2 launch g02_prii3_turtlesim dibujar_2.launch.py
-```
-
-## Comandos - servicios
-
 En otra terminal:
 
 ```bash
 cd ~/UNI/PROYECTOS3/g02_prii3_ws
+
 source /opt/ros/humble/setup.bash
 source install/setup.bash
 ```
 
+### Detener
+
 ```bash
 ros2 service call /detener_dibujo std_srvs/srv/Trigger "{}"
+```
+
+### Reanudar
+
+```bash
 ros2 service call /reanudar_dibujo std_srvs/srv/Trigger "{}"
+```
+
+### Reiniciar
+
+```bash
 ros2 service call /reiniciar_dibujo std_srvs/srv/Trigger "{}"
 ```
 
-## Comandos - comprobar ROS
+## Comprobaciones
 
 ```bash
 ros2 node list
@@ -58,7 +87,7 @@ ros2 topic info /turtle1/cmd_vel
 ros2 service list
 ```
 
-## Codigo principal
+## Código principal
 
 ```text
 src/g02_prii3_turtlesim/g02_prii3_turtlesim/dibujar_2.py
