@@ -4,6 +4,7 @@ from rclpy.node import Node
 from rclpy.action import ActionClient
 
 from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav2_msgs.action import NavigateToPose
 from std_msgs.msg import String
 
@@ -20,7 +21,7 @@ class AutonomousNavigation(Node):
             'navigate_to_pose'
         )
 
-        # Suscripción al topic donde se publican los ArUcos detectados.
+        # Recibe los ArUcos detectados.
         self.create_subscription(
             String,
             '/aruco_info',
@@ -28,8 +29,15 @@ class AutonomousNavigation(Node):
             10
         )
 
+        # Recibe la pose inicial marcada con 2D Pose Estimate.
+        self.create_subscription(
+            PoseWithCovarianceStamped,
+            '/initialpose',
+            self.initial_pose_callback,
+            10
+        )
+
         # Pose intermedia delante del ArUco 5.
-        # Incluye posición y orientación.
         self.entrada_x = 3.24
         self.entrada_y = 1.71
         self.entrada_z = 0.717
@@ -40,13 +48,51 @@ class AutonomousNavigation(Node):
         self.mesa_y = 14.42
 
         # Al principio se ignoran los ArUcos.
-        # Solo se activará cuando el robot llegue a la entrada.
         self.puede_leer_aruco = False
 
-        # Evita mandar varias veces el mismo destino final.
+        # Evita mandar varias veces el destino final.
         self.aruco_detectado = False
 
-        # El primer paso es ir delante del ArUco.
+        # Evita iniciar la navegación varias veces.
+        self.navegacion_iniciada = False
+
+        # Timer para esperar a que Nav2 termine de activarse.
+        self.timer_inicio = None
+
+        self.get_logger().info(
+            'Esperando 2D Pose Estimate en RViz...'
+        )
+
+
+    def initial_pose_callback(self, msg):
+
+        # Solo inicia la navegación una vez.
+        if self.navegacion_iniciada:
+            return
+
+        self.navegacion_iniciada = True
+
+        self.get_logger().info(
+            'Pose inicial recibida desde RViz.'
+        )
+
+        self.get_logger().info(
+            'Esperando a que Nav2 esté preparado...'
+        )
+
+        # Espera 5 segundos antes de empezar.
+        self.timer_inicio = self.create_timer(
+            5.0,
+            self.iniciar_navegacion
+        )
+
+
+    def iniciar_navegacion(self):
+
+        # El timer solo se ejecuta una vez.
+        self.timer_inicio.cancel()
+
+        # Empieza la navegación hacia el ArUco.
         self.enviar_entrada()
 
 
@@ -65,7 +111,7 @@ class AutonomousNavigation(Node):
         goal.pose.pose.position.x = self.entrada_x
         goal.pose.pose.position.y = self.entrada_y
 
-        # Orientación para que el robot quede mirando al ArUco.
+        # Orientación para quedar mirando al ArUco.
         goal.pose.pose.orientation.z = self.entrada_z
         goal.pose.pose.orientation.w = self.entrada_w
 
@@ -76,8 +122,7 @@ class AutonomousNavigation(Node):
         # Envía el objetivo a Navigation2.
         future = self.client.send_goal_async(goal)
 
-        # Cuando Nav2 responde si acepta o no el objetivo,
-        # se ejecuta entrada_aceptada().
+        # Comprueba si Nav2 acepta el destino.
         future.add_done_callback(
             self.entrada_aceptada
         )
@@ -88,7 +133,7 @@ class AutonomousNavigation(Node):
         # Obtiene la respuesta de Navigation2.
         goal_handle = future.result()
 
-        # Si Nav2 rechaza el objetivo, se detiene aquí.
+        # Si Nav2 rechaza el destino, no continúa.
         if not goal_handle.accepted:
 
             self.get_logger().info(
@@ -104,7 +149,6 @@ class AutonomousNavigation(Node):
         # Espera a que termine la navegación.
         result_future = goal_handle.get_result_async()
 
-        # Cuando termina, comprueba si realmente ha llegado.
         result_future.add_done_callback(
             self.entrada_completada
         )
@@ -112,11 +156,10 @@ class AutonomousNavigation(Node):
 
     def entrada_completada(self, future):
 
-        # Resultado final de la navegación.
+        # Obtiene el resultado final de Navigation2.
         resultado = future.result()
 
-        # Solo continuamos si Navigation2 confirma
-        # que el objetivo se ha completado correctamente.
+        # Solo continúa si el robot ha llegado correctamente.
         if resultado.status != GoalStatus.STATUS_SUCCEEDED:
 
             self.get_logger().info(
@@ -125,13 +168,11 @@ class AutonomousNavigation(Node):
 
             return
 
-        # El robot ya está delante del ArUco.
         self.get_logger().info(
             'Robot delante del ArUco.'
         )
 
-        # A partir de ahora sí se aceptan
-        # los mensajes recibidos por /aruco_info.
+        # Ahora sí empieza a aceptar ArUcos.
         self.puede_leer_aruco = True
 
         self.get_logger().info(
@@ -142,18 +183,22 @@ class AutonomousNavigation(Node):
     def aruco_callback(self, msg):
 
         # Mientras el robot va hacia la entrada,
-        # se ignoran todos los ArUcos detectados.
+        # se ignoran los ArUcos detectados.
         if not self.puede_leer_aruco:
             return
 
         # Si ya se ha usado un ArUco,
-        # no volvemos a mandar el destino.
+        # no vuelve a mandar el destino.
         if self.aruco_detectado:
             return
 
-        # Si se detecta el ArUco 5,
-        # se manda al robot hacia la mesa.
-        if 'ID: 5' in msg.data:
+        # Comprueba exactamente si aparece el ID 5.
+        aruco_5 = any(
+            aruco.strip().startswith('ID: 5,')
+            for aruco in msg.data.split('|')
+        )
+
+        if aruco_5:
 
             self.get_logger().info(
                 'ArUco 5 detectado.'
@@ -163,7 +208,7 @@ class AutonomousNavigation(Node):
                 'Yendo a la mesa del profesor...'
             )
 
-            # Evita ejecutar esta parte varias veces.
+            # Evita repetir el destino.
             self.aruco_detectado = True
 
             self.enviar_mesa()
@@ -171,7 +216,7 @@ class AutonomousNavigation(Node):
 
     def enviar_mesa(self):
 
-        # Crea un nuevo objetivo.
+        # Crea el destino final.
         goal = NavigateToPose.Goal()
 
         goal.pose.header.frame_id = 'map'
@@ -198,7 +243,7 @@ def main(args=None):
     # Mantiene el nodo funcionando.
     rclpy.spin(node)
 
-    # Cierra el nodo correctamente.
+    # Cierra correctamente.
     node.destroy_node()
     rclpy.shutdown()
 

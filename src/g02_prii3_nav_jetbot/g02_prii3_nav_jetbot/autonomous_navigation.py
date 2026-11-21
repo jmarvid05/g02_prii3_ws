@@ -146,7 +146,13 @@ class AutonomousNavigation(Node):
             return
 
         # De momento se prueba con el ArUco 5.
-        if 'ID: 5' in msg.data:
+        # Comprueba exactamente si uno de los ArUcos es el ID 5.
+        aruco_5 = any(
+            aruco.strip().startswith('ID: 5,')
+            for aruco in msg.data.split('|')
+        )
+
+        if aruco_5:
 
             self.get_logger().info(
                 'ArUco 5 detectado.'
