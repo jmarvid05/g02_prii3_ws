@@ -29,7 +29,11 @@ def generate_launch_description():
 
     # map_file = '/home/jetbot/ros2_ws/jetbot_pro_ros2/map.yaml'
     # map_file = '/home/jetbot/ros2_ws/jetbot_pro_ros2/map_f1l3.yaml'
-    map_file = '/home/jetbot/map.yaml'
+    map_file = os.path.join(
+        get_package_share_directory('g02_prii3_nav_jetbot'),
+        'maps',
+        'map.yaml'
+    )
 
     return LaunchDescription([
         IncludeLaunchDescription(PythonLaunchDescriptionSource(jetbot_launch)),
