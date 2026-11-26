@@ -35,6 +35,7 @@ setup(
     entry_points={
         'console_scripts': [
             'recorrer_arucos = eurobot_gazebo.recorrer_arucos:main',
+            'detectar_arucos = eurobot_gazebo.detectar_arucos:main',
         ],
     },    
 )
