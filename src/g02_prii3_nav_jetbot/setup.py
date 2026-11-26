@@ -43,6 +43,7 @@ setup(
             'aruco_detection = g02_prii3_nav_jetbot.aruco_detection:main',
             'predefined_navigation = g02_prii3_nav_jetbot.predefined_navigation:main',
             'autonomous_navigation = g02_prii3_nav_jetbot.autonomous_navigation:main',
+            'nav2_auto_start = g02_prii3_nav_jetbot.nav2_auto_start:main',
         ],
     },
 )

@@ -18,6 +18,9 @@ El repositorio contiene el trabajo realizado durante los distintos sprints del p
 - [JetBot real](README_JETBOT.md)  
   Configuración, conexión, mapas y comandos específicos del JetBot.
 
+- [Comandos rápidos del Sprint 3](COMANDOS_SPRINT3.md)
+  Secuencias de arranque y comprobación en simulación y JetBot real.
+
 ## Paquetes principales
 
 ```text
@@ -44,7 +47,7 @@ Navegación y detección de ArUcos en simulación.
 g02_prii3_nav_jetbot
 ```
 
-Navegación y detección de ArUcos para el JetBot real.
+Navegación y detección de ArUcos para el JetBot real. El lanzamiento `nav.py` incorpora `nav2_auto_start`, que automatiza la activación de Nav2 después de indicar la pose inicial desde RViz (pendiente de validación de la automatización con el robot físico).
 
 ## Compilación del workspace
 
@@ -62,4 +65,4 @@ source install/setup.bash
 
 Se ha utilizado Inteligencia Artificial como herramienta de apoyo para organizar, revisar y documentar parte del código del proyecto.
 
-El código final ha sido adaptado y probado dentro del proyecto por los miembros del grupo.
+El código se valida por etapas: la navegación guiada en el JetBot real fue probada; el nuevo arranque automático de Nav2 queda pendiente de prueba física.

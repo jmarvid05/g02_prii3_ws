@@ -7,7 +7,7 @@ Este documento contiene la configuración y los comandos específicos utilizados
 ```text
 IP: 172.16.190.172
 Usuario SSH: jetbot
-ROS 2: Foxy
+ROS 2 (pruebas de Sprint 3): Humble
 ROS_DOMAIN_ID: 172
 ROS_LOCALHOST_ONLY: 0
 ```
@@ -66,6 +66,9 @@ El repositorio debe quedar en:
 ---
 
 # Sprint 2
+
+> Las instrucciones del Sprint 2 conservan algunas referencias históricas a Foxy; para la navegación del Sprint 3 con el JetBot se ha utilizado Humble.
+
 
 ## Arrancar la base del JetBot
 
@@ -241,7 +244,7 @@ ros2 launch g02_prii3_move_jetbot vision_jetbot.launch.py
 En el JetBot:
 
 ```bash
-source /opt/ros/foxy/setup.bash
+source /opt/ros/humble/setup.bash
 source ~/ros2_ws/install/setup.bash
 
 export ROS_DOMAIN_ID=172
@@ -296,81 +299,77 @@ mapas/jetbot_real/map.pgm
 
 ---
 
-## Copiar el mapa del repositorio al JetBot
+## Arranque automatizado de Nav2 (Sprint 3)
 
-Desde el portátil:
-
-```bash
-cd ~/UNI/PROYECTOS3/g02_prii3_ws
-
-scp mapas/jetbot_real/map.yaml \
-jetbot@172.16.190.172:~/
-
-scp mapas/jetbot_real/map.pgm \
-jetbot@172.16.190.172:~/
-```
-
-El `nav.py` utilizado para navegación real espera:
+El `nav.py` del **paquete del grupo** arranca la base JetBot y Nav2 con
+`autostart=False`. El nodo `nav2_auto_start.py` gestiona los servicios de
+localización y navegación en este orden:
 
 ```text
-/home/jetbot/map.yaml
+nav.py -> activar map_server y AMCL -> esperar 2D Pose Estimate
+       -> comprobar TF map -> base_footprint -> activar navegación
 ```
 
----
+No es necesario copiar `nav.py` dentro de `jetbot_pro_ros2`, ni colocar
+`map.yaml` en `/home/jetbot/`: el mapa se obtiene desde el propio paquete
+`g02_prii3_nav_jetbot/maps/map.yaml` (junto con `map.pgm`).
 
-## Navegación real
+### Terminal 1 — JetBot por SSH
 
-En el JetBot:
+Antes de ejecutar los comandos, actualizar el repositorio y compilar el paquete
+si han cambiado sus archivos:
 
 ```bash
-source /opt/ros/foxy/setup.bash
+cd ~/g02_prii3_ws
+source /opt/ros/humble/setup.bash
 source ~/ros2_ws/install/setup.bash
-
-export ROS_DOMAIN_ID=172
-export ROS_LOCALHOST_ONLY=0
-
-ros2 launch jetbot_pro_ros2 nav.py
+colcon build --packages-select g02_prii3_nav_jetbot --symlink-install
+source ~/g02_prii3_ws/install/setup.bash
+export ROS_DOMAIN_ID=172 ROS_LOCALHOST_ONLY=0
+ros2 launch g02_prii3_nav_jetbot nav.py
 ```
 
-Desde el portátil puede abrirse RViz con:
+Dejar esta terminal abierta. **No lanzar `jetbot.py` por separado**, pues
+`nav.py` ya lo incluye. El nodo auxiliar debe activar primero la localización
+y pedir que se establezca la pose inicial.
+
+### Terminal 2 — Portátil local (RViz)
 
 ```bash
-ros2 run rviz2 rviz2 -d ~/nav2.rviz
+source /opt/ros/humble/setup.bash
+export ROS_DOMAIN_ID=172 ROS_LOCALHOST_ONLY=0
+rviz2 -d ~/UNI/PROYECTOS3/g02_prii3_ws/config/jetbot_f1l3.rviz
 ```
 
-También puede utilizarse:
+En RViz, el mapa `/map` utiliza **Reliable + Transient Local** y el LiDAR
+`/scan`, **Best Effort**. Marcar la posición y orientación reales del robot
+con **2D Pose Estimate**. El sistema debe esperar a recibir esta pose y disponer
+de TF antes de activar el resto de Nav2.
+
+### Comprobar en otra terminal SSH
 
 ```bash
-ros2 run rviz2 rviz2 \
--d $(ros2 pkg prefix nav2_bringup)/share/nav2_bringup/rviz/nav2_default_view.rviz
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+source ~/g02_prii3_ws/install/setup.bash
+export ROS_DOMAIN_ID=172 ROS_LOCALHOST_ONLY=0
+for nodo in map_server amcl planner_server controller_server bt_navigator; do
+    echo "=== $nodo ==="
+    timeout 15s ros2 lifecycle get /$nodo
+done
+ros2 action list -t | grep navigate_to_pose
 ```
 
----
+Los cinco nodos deben indicar `active [3]` antes de enviar objetivos. Comprobar
+además que los datos del LiDAR coinciden con las paredes del entorno real y
+que existe una forma de detener el robot. Si alguno falla, revisar el log de
+`nav.py` y **no enviar destinos**.
 
-## `nav.py`
-
-La copia utilizada como referencia en el proyecto está en:
-
-```text
-src/g02_prii3_nav_jetbot/launch/nav.py
-```
-
-Para copiarla al paquete del profesor en el JetBot:
-
-```bash
-scp src/g02_prii3_nav_jetbot/launch/nav.py \
-jetbot@172.16.190.172:/home/jetbot/ros2_ws/jetbot_pro_ros2/launch/
-```
-
-Después, en el JetBot:
-
-```bash
-cd ~/ros2_ws
-
-colcon build
-
-source install/setup.bash
-```
+**Estado de las pruebas:** el mapa real F1L3, la localización y la navegación
+manual desde RViz se probaron en el JetBot. El nuevo arranque automático
+`nav2_auto_start.py` está compilado en el portátil, pero **aún no se ha probado
+físicamente en el JetBot**. La cámara CSI y la demostración autónoma con ArUcos
+quedan pendientes de validación.
 
 ---
 

@@ -324,27 +324,53 @@ La navegación guiada ha sido probada correctamente.
 
 ---
 
-## JetBot real
+## JetBot real: inicio automático y prueba guiada
 
-Para SLAM y navegación real se utilizan:
-
-```text
-slam.py
-nav.py
-```
-
-El mapa real está almacenado en:
+El mapa real F1L3 está almacenado en:
 
 ```text
 mapas/jetbot_real/map.yaml
 mapas/jetbot_real/map.pgm
 ```
 
-Los comandos específicos del JetBot están documentados en:
+El launch del grupo usa la copia incluida en el paquete:
 
 ```text
-README_JETBOT.md
+src/g02_prii3_nav_jetbot/maps/map.yaml
 ```
+
+Se ha incorporado `nav2_auto_start.py` para iniciar la localización, esperar
+**2D Pose Estimate** en RViz, comprobar TF y activar después los nodos de
+navegación. El `nav.py` del grupo conserva `autostart=False` y arranca este
+nodo auxiliar.
+
+**Comandos principales (JetBot por SSH):**
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/ros2_ws/install/setup.bash
+source ~/g02_prii3_ws/install/setup.bash
+export ROS_DOMAIN_ID=172 ROS_LOCALHOST_ONLY=0
+ros2 launch g02_prii3_nav_jetbot nav.py
+```
+
+**RViz (portátil local):**
+
+```bash
+source /opt/ros/humble/setup.bash
+export ROS_DOMAIN_ID=172 ROS_LOCALHOST_ONLY=0
+rviz2 -d ~/UNI/PROYECTOS3/g02_prii3_ws/config/jetbot_f1l3.rviz
+```
+
+Una vez aparezca el mapa, indicar la pose inicial real y comprobar la
+localización antes de enviar destinos. **La navegación guiada con el JetBot
+real se ha probado**; la automatización del nuevo nodo se ha compilado en el
+portátil, pero su prueba física está pendiente. La prueba de ArUcos con la
+cámara CSI del JetBot continúa pendiente.
+
+Para la secuencia completa y las verificaciones, ver
+[README_JETBOT.md](README_JETBOT.md) y
+[COMANDOS_SPRINT3.md](COMANDOS_SPRINT3.md).
 
 ---
 
